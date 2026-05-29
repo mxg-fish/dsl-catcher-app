@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
+.venv/
+
+# SQLite DB (don't commit data)
+backend/data/
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Vite dev artifacts (keep dist — backend serves it)
+frontend/.vite/
+
+# OS
+.DS_Store
+Thumbs.db
