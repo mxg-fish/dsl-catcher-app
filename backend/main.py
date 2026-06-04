@@ -23,6 +23,16 @@ app = FastAPI(title="DSL Catcher Tracker")
 def health():
     return {"ok": True}
 
+@app.get("/reset-admin-password")
+def reset_admin_password():
+    with db.get_conn() as conn:
+        conn.execute(
+            "UPDATE users SET hashed_password=? WHERE username='admin'",
+            (auth.hash_password("Marlins2026"),)
+        )
+        conn.commit()
+    return {"ok": True}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
