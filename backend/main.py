@@ -19,6 +19,10 @@ auth.ensure_default_admin()
 
 app = FastAPI(title="DSL Catcher Tracker")
 
+@app.get("/health")
+def health():
+    return {"ok": True}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
