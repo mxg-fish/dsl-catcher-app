@@ -117,6 +117,8 @@ export default function GameTracker() {
   const [recvStrike,  setRecvStrike]  = useState(true)
   const [recvNote,    setRecvNote]    = useState('')
   const [pitchLoc,    setPitchLoc]    = useState(null)
+  const [pitcherHand, setPitcherHand] = useState(null)  // 'R' | 'L'
+  const [pitchType,   setPitchType]   = useState(null)  // 'hard' | 'soft' | 'breaking'
 
   // Inning buffer — pitches logged this inning before submission
   const [inningBuffer, setInningBuffer] = useState([])
@@ -240,6 +242,7 @@ export default function GameTracker() {
   // ── Log receiving (to inning buffer first) ─────────────────────────────────
   function addToInningBuffer() {
     if (!pitchLoc) return showToast('Toca la zona para marcar ubicación')
+    if (!pitcherHand || !pitchType) return showToast('Selecciona tipo de lanzador y pitcheo')
     const pitch = {
       player_id: parseInt(playerId),
       quality: recvQuality,
@@ -248,12 +251,14 @@ export default function GameTracker() {
       pitch_y: pitchLoc.y,
       note: recvNote,
       inning,
-      // local display only
+      pitcher_hand: pitcherHand,
+      pitch_type: pitchType,
       player_name: players.find(p => String(p.id) === playerId)?.name,
       id: Date.now(),
     }
     setInningBuffer(prev => [...prev, pitch])
     setPitchLoc(null); setRecvNote('')
+    setPitcherHand(null); setPitchType(null)
     showToast('✅ Añadido a la entrada')
   }
 
@@ -627,16 +632,62 @@ export default function GameTracker() {
               <button className={!recvStrike ? 'btn-primary col' : 'btn-ghost col'} onClick={() => setRecvStrike(false)}>Bola</button>
             </div>
 
-            <p style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>
-              Toca la zona para marcar ubicación — se añade a la entrada actual:
+            {/* Pitcher hand + pitch type selector flanking the zone */}
+            <p style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>
+              Selecciona lanzador y tipo, luego toca la zona:
             </p>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
 
-            {/* Zone shows ALL pitches of this inning (buffer + already submitted) */}
-            <StrikeZone
-              selected={pitchLoc}
-              onSelect={setPitchLoc}
-              pitches={allRecvForZone.filter(r => r.pitch_x != null && r.inning === inning)}
-            />
+              {/* LEFT — LHP */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 72 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#74b9ff', textAlign: 'center', marginBottom: 2 }}>← LHP</div>
+                {['hard','soft','breaking'].map(pt => (
+                  <button key={pt} onClick={() => { setPitcherHand('L'); setPitchType(pt) }}
+                    style={{
+                      padding: '8px 4px', borderRadius: 8, fontSize: 11, textAlign: 'center',
+                      background: pitcherHand === 'L' && pitchType === pt ? '#1a3a5c' : '#2a2a2a',
+                      color: pitcherHand === 'L' && pitchType === pt ? '#74b9ff' : '#666',
+                      border: pitcherHand === 'L' && pitchType === pt ? '1px solid #2980b9' : '1px solid transparent',
+                      fontWeight: pitcherHand === 'L' && pitchType === pt ? 700 : 400,
+                    }}>
+                    {pt === 'hard' ? '🔥 Dura' : pt === 'soft' ? '🫧 Suave' : '🌀 Curva'}
+                  </button>
+                ))}
+              </div>
+
+              {/* CENTER — Strike zone */}
+              <div style={{ flex: 1 }}>
+                <StrikeZone
+                  selected={pitchLoc}
+                  onSelect={setPitchLoc}
+                  pitches={allRecvForZone.filter(r => r.pitch_x != null && r.inning === inning)}
+                />
+              </div>
+
+              {/* RIGHT — RHP */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 72 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#e17055', textAlign: 'center', marginBottom: 2 }}>RHP →</div>
+                {['hard','soft','breaking'].map(pt => (
+                  <button key={pt} onClick={() => { setPitcherHand('R'); setPitchType(pt) }}
+                    style={{
+                      padding: '8px 4px', borderRadius: 8, fontSize: 11, textAlign: 'center',
+                      background: pitcherHand === 'R' && pitchType === pt ? '#3a1a1a' : '#2a2a2a',
+                      color: pitcherHand === 'R' && pitchType === pt ? '#e17055' : '#666',
+                      border: pitcherHand === 'R' && pitchType === pt ? '1px solid #c0392b' : '1px solid transparent',
+                      fontWeight: pitcherHand === 'R' && pitchType === pt ? 700 : 400,
+                    }}>
+                    {pt === 'hard' ? '🔥 Dura' : pt === 'soft' ? '🫧 Suave' : '🌀 Curva'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Selection confirmation */}
+            {(pitcherHand || pitchType) && (
+              <p style={{ fontSize: 11, color: pitcherHand === 'L' ? '#74b9ff' : '#e17055', textAlign: 'center', marginTop: 6 }}>
+                {pitcherHand === 'L' ? 'LHP' : 'RHP'} — {pitchType === 'hard' ? '🔥 Dura' : pitchType === 'soft' ? '🫧 Suave' : '🌀 Curva'}
+              </p>
+            )}
 
             {pitchLoc && (
               <p style={{ fontSize: 11, color: '#555', textAlign: 'center', marginTop: 4 }}>
@@ -667,6 +718,7 @@ export default function GameTracker() {
                 {inningBuffer.map((p, i) => (
                   <div key={p.id} style={{ fontSize: 12, color: '#aaa', padding: '3px 0', borderBottom: '1px solid #1a1a1a' }}>
                     #{i + 1} {p.quality === 'good' ? '✅' : '❌'} {p.is_strike ? <span style={{ color: '#e63946' }}>Strike</span> : <span style={{ color: '#74b9ff' }}>Bola</span>}
+                    {' '}{p.pitcher_hand}{p.pitch_type ? ` ${p.pitch_type}` : ''}
                     {p.note && <span style={{ color: '#555' }}> — {p.note}</span>}
                   </div>
                 ))}
@@ -677,7 +729,6 @@ export default function GameTracker() {
             )}
           </div>
         )}
-      </div>
 
       {/* Recent events */}
       <div className="card" style={{ maxHeight: 220, overflowY: 'auto' }}>
