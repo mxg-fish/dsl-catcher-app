@@ -79,7 +79,7 @@ export default function Weekly() {
             <span>Pop: {s.avg_pop_time ?? '—'}s</span>
             <span>Bloqueos: {s.blocks}/{s.block_chances} ({s.block_pct}%)</span>
             <span>SL+: {s.sl_plus ?? '—'}</span>
-            <span>Buenos: {s.good_moves} | Malos: {s.bad_moves}</span>
+            <span>Gran: {s.great_moves} | Buenos: {s.good_moves} | Malos: {s.bad_moves}</span>
           </div>
         </div>
       ))}
