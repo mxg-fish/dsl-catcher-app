@@ -201,10 +201,12 @@ class ReceivingEvent(BaseModel):
     player_id: int
     quality: str    # good | bad
     is_strike: bool = False
-    pitch_x: Optional[float] = None   # 0-1 normalized (left→right from catcher view)
-    pitch_y: Optional[float] = None   # 0-1 normalized (bottom→top)
+    pitch_x: Optional[float] = None
+    pitch_y: Optional[float] = None
     note: Optional[str] = None
     inning: Optional[int] = None
+    pitcher_hand: Optional[str] = None   # 'R' | 'L'
+    pitch_type: Optional[str] = None     # 'hard' | 'soft' | 'breaking'
 
 
 # Bulk sync endpoint for offline queues
@@ -243,8 +245,9 @@ def log_block(game_id: int, body: BlockEvent, _=Depends(current_user)):
 def log_receiving(game_id: int, body: ReceivingEvent, _=Depends(current_user)):
     with db.get_conn() as conn:
         cur = conn.execute(
-            "INSERT INTO receiving_events(game_id,player_id,quality,is_strike,pitch_x,pitch_y,note,inning) VALUES(?,?,?,?,?,?,?,?)",
-            (game_id, body.player_id, body.quality, int(body.is_strike), body.pitch_x, body.pitch_y, body.note, body.inning)
+            "INSERT INTO receiving_events(game_id,player_id,quality,is_strike,pitch_x,pitch_y,note,inning,pitcher_hand,pitch_type) VALUES(?,?,?,?,?,?,?,?,?,?)",
+            (game_id, body.player_id, body.quality, int(body.is_strike), body.pitch_x, body.pitch_y,
+             body.note, body.inning, body.pitcher_hand, body.pitch_type)
         )
         conn.commit()
         return {"id": cur.lastrowid}
