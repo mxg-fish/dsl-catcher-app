@@ -192,6 +192,9 @@ class BlockEvent(BaseModel):
     blocked: bool = False
     passed_ball: bool = False
     wild_pitch: bool = False
+    is_pick: bool = False
+    block_x: Optional[float] = None
+    block_y: Optional[float] = None
 
 
 class ReceivingEvent(BaseModel):
