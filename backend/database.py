@@ -144,6 +144,12 @@ def init_db():
         if "block_y" not in cols:
             conn.execute("ALTER TABLE block_events ADD COLUMN block_y REAL")
         conn.commit()
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(receiving_events)").fetchall()]
+        if "pitcher_hand" not in cols:
+            conn.execute("ALTER TABLE receiving_events ADD COLUMN pitcher_hand TEXT")
+        if "pitch_type" not in cols:
+            conn.execute("ALTER TABLE receiving_events ADD COLUMN pitch_type TEXT")
+        conn.commit()
 
         # Seed season and players
         conn.execute("INSERT OR IGNORE INTO seasons(year) VALUES(2026)")
