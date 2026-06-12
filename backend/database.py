@@ -91,7 +91,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             game_id INTEGER NOT NULL REFERENCES games(id),
             player_id INTEGER NOT NULL REFERENCES players(id),
-            quality TEXT NOT NULL CHECK(quality IN ('good','bad')),
+            quality TEXT NOT NULL CHECK(quality IN ('good','bad','great')),
             is_strike INTEGER NOT NULL DEFAULT 0,
             pitch_x REAL,
             pitch_y REAL,
