@@ -613,8 +613,8 @@ export default function GameTracker() {
                 )}
               </div>
             </div>
+          </div>
         )}
-
         {/* ── RECIBIR ── */}
         {tab === 2 && (
           <div>
