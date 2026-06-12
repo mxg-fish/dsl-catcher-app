@@ -1,0 +1,36 @@
+name: Build Frontend
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'frontend/src/**'
+      - 'frontend/public/**'
+      - 'frontend/package.json'
+      - 'frontend/vite.config.js'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: cd frontend && npm ci
+
+      - name: Build
+        run: cd frontend && npm run build
+
+      - name: Commit dist
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add frontend/dist
+          git diff --staged --quiet || git commit -m "chore: rebuild frontend dist"
+          git push
