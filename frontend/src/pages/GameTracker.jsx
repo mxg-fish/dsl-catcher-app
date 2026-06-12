@@ -717,7 +717,7 @@ export default function GameTracker() {
                 </div>
                 {inningBuffer.map((p, i) => (
                   <div key={p.id} style={{ fontSize: 12, color: '#aaa', padding: '3px 0', borderBottom: '1px solid #1a1a1a' }}>
-                    #{i + 1} {p.quality === 'good' ? '✅' : '❌'} {p.is_strike ? <span style={{ color: '#e63946' }}>Strike</span> : <span style={{ color: '#74b9ff' }}>Bola</span>}
+                    #{i + 1} {p.quality === 'great' ? '⭐' : p.quality === 'good' ? '✅' : '❌'} {p.is_strike ? <span style={{ color: '#e63946' }}>Strike</span> : <span style={{ color: '#74b9ff' }}>Bola</span>}
                     {' '}{p.pitcher_hand}{p.pitch_type ? ` ${p.pitch_type}` : ''}
                     {p.note && <span style={{ color: '#555' }}> — {p.note}</span>}
                   </div>
@@ -744,8 +744,8 @@ export default function GameTracker() {
           </div>
         ))}
         {log.receiving.slice(0, 6).map(r => (
-          <div key={r.id} className={`badge ${r.quality === 'good' ? 'badge-green' : 'badge-red'}`} style={{ display: 'block', marginBottom: 4, fontSize: 12 }}>
-            E{r.inning ?? '?'} {r.player_name} — {r.quality === 'good' ? '✅ Buen' : '❌ Mal'} Mov {r.is_strike ? 'Strike' : 'Bola'} {r._offline ? '📥' : ''}
+          <div key={r.id} className={`badge ${r.quality === 'great' ? 'badge-green' : r.quality === 'good' ? 'badge-green' : 'badge-red'}`} style={{ display: 'block', marginBottom: 4, fontSize: 12 }}>
+            E{r.inning ?? '?'} {r.player_name} — {r.quality === 'great' ? '⭐ Gran' : r.quality === 'good' ? '✅ Buen' : '❌ Mal'} Mov {r.is_strike ? 'Strike' : 'Bola'} {r._offline ? '📥' : ''}
           </div>
         ))}
         {log.throws.length + log.blocks.length + log.receiving.length === 0 && (
