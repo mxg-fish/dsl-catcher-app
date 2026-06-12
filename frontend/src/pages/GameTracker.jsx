@@ -729,7 +729,7 @@ export default function GameTracker() {
             )}
           </div>
         )}
-
+      </div>
       {/* Recent events */}
       <div className="card" style={{ maxHeight: 220, overflowY: 'auto' }}>
         <h3 style={{ marginBottom: 8 }}>Eventos del Juego</h3>
