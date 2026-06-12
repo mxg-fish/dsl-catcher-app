@@ -231,8 +231,9 @@ def log_throw(game_id: int, body: ThrowEvent, _=Depends(current_user)):
 def log_block(game_id: int, body: BlockEvent, _=Depends(current_user)):
     with db.get_conn() as conn:
         cur = conn.execute(
-            "INSERT INTO block_events(game_id,player_id,location,blocked,passed_ball,wild_pitch) VALUES(?,?,?,?,?,?)",
-            (game_id, body.player_id, body.location, int(body.blocked), int(body.passed_ball), int(body.wild_pitch))
+            "INSERT INTO block_events(game_id,player_id,location,blocked,passed_ball,wild_pitch,is_pick,block_x,block_y) VALUES(?,?,?,?,?,?,?,?,?)",
+            (game_id, body.player_id, body.location, int(body.blocked), int(body.passed_ball),
+             int(body.wild_pitch), int(body.is_pick), body.block_x, body.block_y)
         )
         conn.commit()
         return {"id": cur.lastrowid}
