@@ -109,7 +109,9 @@ export default function GameTracker() {
   const [blocked,    setBlocked]    = useState(true)
   const [passedBall, setPassedBall] = useState(false)
   const [wildPitch,  setWildPitch]  = useState(false)
-
+  const [isPick,     setIsPick]     = useState(false)
+  const [blockXY,    setBlockXY]    = useState(null)
+  
   // ── Receiving form state ───────────────────────────────────────────────────
   const [recvQuality, setRecvQuality] = useState('good')
   const [recvStrike,  setRecvStrike]  = useState(true)
@@ -226,9 +228,13 @@ export default function GameTracker() {
     const online = await postEvent(`/games/${gameId}/blocks`, {
       player_id: parseInt(playerId), location: blockLoc,
       blocked, passed_ball: passedBall, wild_pitch: wildPitch,
+      is_pick: isPick,
+      block_x: blockXY?.x ?? null,
+      block_y: blockXY?.y ?? null,
     }, 'block')
     showToast(online ? '✅ Bloqueo registrado' : '📥 Guardado offline')
     setBlocked(true); setPassedBall(false); setWildPitch(false)
+    setIsPick(false); setBlockXY(null)
   }
 
   // ── Log receiving (to inning buffer first) ─────────────────────────────────
@@ -538,6 +544,53 @@ export default function GameTracker() {
               <button className={!blocked && !passedBall && !wildPitch ? 'btn-danger col' : 'btn-ghost col'}
                 onClick={() => { setBlocked(false); setPassedBall(false); setWildPitch(false) }}>❌ No Bloq.</button>
             </div>
+            {/* Pick toggle */}
+            <div style={{ marginTop: 14 }}>
+              <button onClick={() => setIsPick(!isPick)}
+                style={{
+                  padding: '8px 18px', borderRadius: 20, fontSize: 13,
+                  background: isPick ? '#1a3a5c' : '#2a2a2a',
+                  color: isPick ? '#74b9ff' : '#666',
+                  border: isPick ? '1px solid #2980b9' : '1px solid transparent',
+                }}>
+                {isPick ? '🧤 Pick' : '○ Pick'}
+              </button>
+            </div>
+
+            {/* Overhead plate grid */}
+            <div style={{ marginTop: 14 }}>
+              <p style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>
+                Toca donde bloqueó (vista desde arriba):
+              </p>
+              <svg viewBox="0 0 200 160" width="100%" style={{ maxWidth: 200, display: 'block', margin: '0 auto', cursor: 'crosshair', background: '#1a1a1a', borderRadius: 8 }}
+                onClick={e => {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  const x = (e.clientX - rect.left) / rect.width
+                  const y = (e.clientY - rect.top) / rect.height
+                  setBlockXY({ x, y })
+                }}>
+                <polygon points="100,140 60,120 60,60 140,60 140,120" fill="none" stroke="#666" strokeWidth="2"/>
+                <line x1="60" y1="80" x2="140" y2="80" stroke="#333" strokeWidth="1"/>
+                <line x1="60" y1="100" x2="140" y2="100" stroke="#333" strokeWidth="1"/>
+                <line x1="80" y1="60" x2="80" y2="120" stroke="#333" strokeWidth="1"/>
+                <line x1="100" y1="60" x2="100" y2="120" stroke="#333" strokeWidth="1"/>
+                <line x1="120" y1="60" x2="120" y2="120" stroke="#333" strokeWidth="1"/>
+                <text x="70" y="75" fill="#555" fontSize="9" textAnchor="middle">GS</text>
+                <text x="130" y="75" fill="#555" fontSize="9" textAnchor="middle">AS</text>
+                <text x="100" y="55" fill="#555" fontSize="9" textAnchor="middle">Centro</text>
+                <text x="100" y="155" fill="#555" fontSize="9" textAnchor="middle">HOME</text>
+                {blockXY && (
+                  <circle cx={blockXY.x * 200} cy={blockXY.y * 160} r="7"
+                    fill="#e63946" fillOpacity="0.8" stroke="#fff" strokeWidth="1.5"/>
+                )}
+              </svg>
+              {blockXY && (
+                <p style={{ textAlign: 'center', fontSize: 11, color: '#666', marginTop: 4 }}>
+                  {blockXY.x < 0.4 ? 'Lado Guante' : blockXY.x > 0.6 ? 'Lado Brazo' : 'Centro'}
+                </p>
+              )}
+            </div>
+
             <div className="row" style={{ marginTop: 14, gap: 8 }}>
               <button className="btn-primary btn-full btn-lg" onClick={logBlock}>Registrar Bloqueo</button>
               <button className="btn-ghost" onClick={() => undoLast('block')} title="Deshacer">↩</button>
