@@ -622,7 +622,8 @@ export default function GameTracker() {
         )}
         {/* ── RECIBIR ── */}
         {tab === 2 && (
-          <div className="row" style={{ marginBottom: 12, gap: 4 }}>
+          <div>
+            <div className="row" style={{ marginBottom: 12, gap: 4 }}>
               <button className={recvQuality === 'great' ? 'btn-success col btn-lg' : 'btn-ghost col btn-lg'} onClick={() => setRecvQuality('great')}>⭐ Gran Mov.</button>
               <button className={recvQuality === 'good'  ? 'btn-success col btn-lg' : 'btn-ghost col btn-lg'} onClick={() => setRecvQuality('good')}>✅ Buen Mov.</button>
               <button className={recvQuality === 'bad'   ? 'btn-danger col btn-lg'  : 'btn-ghost col btn-lg'} onClick={() => setRecvQuality('bad')}>❌ Mal Mov.</button>
