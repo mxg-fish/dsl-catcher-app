@@ -136,6 +136,14 @@ def init_db():
         if "back_pick_base" not in cols:
             conn.execute("ALTER TABLE throw_events ADD COLUMN back_pick_base TEXT")
         conn.commit()
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(block_events)").fetchall()]
+        if "is_pick" not in cols:
+            conn.execute("ALTER TABLE block_events ADD COLUMN is_pick INTEGER NOT NULL DEFAULT 0")
+        if "block_x" not in cols:
+            conn.execute("ALTER TABLE block_events ADD COLUMN block_x REAL")
+        if "block_y" not in cols:
+            conn.execute("ALTER TABLE block_events ADD COLUMN block_y REAL")
+        conn.commit()
 
         # Seed season and players
         conn.execute("INSERT OR IGNORE INTO seasons(year) VALUES(2026)")
