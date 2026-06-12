@@ -559,43 +559,60 @@ export default function GameTracker() {
 
             {/* Overhead plate grid */}
             <div style={{ marginTop: 14 }}>
-              <p style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>
-                Toca donde bloqueó (vista desde arriba):
+              <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>
+                Toca donde bloqueó — sin toque = bola en el aire:
               </p>
-              <svg viewBox="0 0 200 160" width="100%" style={{ maxWidth: 200, display: 'block', margin: '0 auto', cursor: 'crosshair', background: '#1a1a1a', borderRadius: 8 }}
+              <svg viewBox="0 0 300 300" width="100%" style={{ maxWidth: 300, display: 'block', margin: '0 auto', cursor: 'crosshair', background: '#1a1a1a', borderRadius: 8 }}
                 onClick={e => {
                   const rect = e.currentTarget.getBoundingClientRect()
                   const x = (e.clientX - rect.left) / rect.width
                   const y = (e.clientY - rect.top) / rect.height
                   setBlockXY({ x, y })
                 }}>
-                <polygon points="100,140 60,120 60,60 140,60 140,120" fill="none" stroke="#666" strokeWidth="2"/>
-                <line x1="60" y1="80" x2="140" y2="80" stroke="#333" strokeWidth="1"/>
-                <line x1="60" y1="100" x2="140" y2="100" stroke="#333" strokeWidth="1"/>
-                <line x1="80" y1="60" x2="80" y2="120" stroke="#333" strokeWidth="1"/>
-                <line x1="100" y1="60" x2="100" y2="120" stroke="#333" strokeWidth="1"/>
-                <line x1="120" y1="60" x2="120" y2="120" stroke="#333" strokeWidth="1"/>
-                <text x="70" y="75" fill="#555" fontSize="9" textAnchor="middle">GS</text>
-                <text x="130" y="75" fill="#555" fontSize="9" textAnchor="middle">AS</text>
-                <text x="100" y="55" fill="#555" fontSize="9" textAnchor="middle">Centro</text>
-                <text x="100" y="155" fill="#555" fontSize="9" textAnchor="middle">HOME</text>
+                {/* Dirt area background */}
+                <rect x="0" y="0" width="300" height="300" fill="#2a1f14" rx="8"/>
+                {/* Grid lines every ~30px = 1ft */}
+                {[0,1,2,3,4,5,6,7,8,9,10].map(i => (
+                  <line key={`gv${i}`} x1={i*30} y1={0} x2={i*30} y2={300} stroke="#333" strokeWidth="0.5"/>
+                ))}
+                {[0,1,2,3,4,5,6,7,8,9,10].map(i => (
+                  <line key={`gh${i}`} x1={0} y1={i*30} x2={300} y2={i*30} stroke="#333" strokeWidth="0.5"/>
+                ))}
+                {/* Home plate — centered at 150,180, ~60px wide */}
+                <polygon points="150,240 110,215 110,155 190,155 190,215" fill="#3a3a3a" stroke="#888" strokeWidth="2"/>
+                {/* Plate inner white */}
+                <polygon points="150,232 116,210 116,162 184,162 184,210" fill="#555" stroke="#aaa" strokeWidth="1"/>
+                {/* Center dot */}
+                <circle cx="150" cy="190" r="3" fill="#888"/>
+                {/* Labels */}
+                <text x="150" y="148" fill="#666" fontSize="9" textAnchor="middle">5ft</text>
+                <text x="150" y="295" fill="#666" fontSize="9" textAnchor="middle">HOME</text>
+                <text x="8" y="150" fill="#666" fontSize="9">5ft</text>
+                <text x="270" y="150" fill="#666" fontSize="9">5ft</text>
+                <text x="60" y="185" fill="#555" fontSize="8" textAnchor="middle">GS</text>
+                <text x="240" y="185" fill="#555" fontSize="8" textAnchor="middle">AS</text>
+                {/* Selected dot */}
                 {blockXY && (
-                  <circle cx={blockXY.x * 200} cy={blockXY.y * 160} r="7"
-                    fill="#e63946" fillOpacity="0.8" stroke="#fff" strokeWidth="1.5"/>
+                  <circle cx={blockXY.x * 300} cy={blockXY.y * 300} r="8"
+                    fill="#e63946" fillOpacity="0.85" stroke="#fff" strokeWidth="1.5"/>
                 )}
               </svg>
-              {blockXY && (
-                <p style={{ textAlign: 'center', fontSize: 11, color: '#666', marginTop: 4 }}>
-                  {blockXY.x < 0.4 ? 'Lado Guante' : blockXY.x > 0.6 ? 'Lado Brazo' : 'Centro'}
-                </p>
-              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                {blockXY ? (
+                  <p style={{ fontSize: 11, color: '#e9c46a', margin: 0 }}>
+                    🟫 En tierra — {blockXY.x < 0.4 ? 'Lado Guante' : blockXY.x > 0.6 ? 'Lado Brazo' : 'Centro'}
+                  </p>
+                ) : (
+                  <p style={{ fontSize: 11, color: '#74b9ff', margin: 0 }}>🌀 Bola en el aire</p>
+                )}
+                {blockXY && (
+                  <button onClick={() => setBlockXY(null)}
+                    style={{ fontSize: 11, padding: '4px 10px', borderRadius: 12, background: '#2a2a2a', color: '#888' }}>
+                    ✕ Limpiar
+                  </button>
+                )}
+              </div>
             </div>
-
-            <div className="row" style={{ marginTop: 14, gap: 8 }}>
-              <button className="btn-primary btn-full btn-lg" onClick={logBlock}>Registrar Bloqueo</button>
-              <button className="btn-ghost" onClick={() => undoLast('block')} title="Deshacer">↩</button>
-            </div>
-          </div>
         )}
 
         {/* ── RECIBIR ── */}
