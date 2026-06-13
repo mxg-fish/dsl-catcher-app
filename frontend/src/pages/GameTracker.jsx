@@ -439,9 +439,6 @@ export default function GameTracker() {
             <div className="row" style={{ gap: 8 }}>
               <div className="col">
                 <label>Tiempo (seg)</label>
-            <div className="row" style={{ gap: 8 }}>
-              <div className="col">
-                <label>Tiempo (seg)</label>
                 <input type="number" step="0.01" min="1.5" max="4" value={popTime}
                   onChange={e => setPopTime(e.target.value)} placeholder="2.05" />
               </div>
