@@ -419,6 +419,116 @@ def player_history(player_id: int, season_id: int, _=Depends(current_user)):
                 rows.append({**s, "week_number": w["week_number"], "start_date": w["start_date"]})
     return rows
 
+# ── Game Summary ──────────────────────────────────────────────────────────────
+
+@app.patch("/api/games/{game_id}/complete")
+def complete_game(game_id: int, _=Depends(current_user)):
+    with db.get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("UPDATE games SET completed=1 WHERE id=%s", (game_id,))
+    return {"ok": True}
+
+
+@app.get("/api/games/{game_id}/summary")
+def game_summary(game_id: int, _=Depends(current_user)):
+    with db.get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM games WHERE id=%s", (game_id,))
+        game = dict(cur.fetchone())
+        cur.execute("SELECT * FROM players WHERE active=1 ORDER BY name")
+        players = cur.fetchall()
+
+        summaries = []
+        for p in players:
+            pid = p["id"]
+
+            cur.execute(
+                "SELECT * FROM throw_events WHERE game_id=%s AND player_id=%s ORDER BY created_at",
+                (game_id, pid)
+            )
+            throws = cur.fetchall()
+
+            cur.execute(
+                "SELECT * FROM block_events WHERE game_id=%s AND player_id=%s ORDER BY created_at",
+                (game_id, pid)
+            )
+            blocks = cur.fetchall()
+
+            cur.execute(
+                "SELECT * FROM receiving_events WHERE game_id=%s AND player_id=%s ORDER BY created_at",
+                (game_id, pid)
+            )
+            receiving = cur.fetchall()
+
+            if not throws and not blocks and not receiving:
+                continue
+
+            reg_throws = [t for t in throws if not t["back_pick"]]
+            bp_throws  = [t for t in throws if t["back_pick"]]
+            pop_times  = [t["pop_time"] for t in reg_throws if t["pop_time"]]
+
+            great = sum(1 for r in receiving if r["quality"] == "great")
+            good  = sum(1 for r in receiving if r["quality"] == "good")
+            bad   = sum(1 for r in receiving if r["quality"] == "bad")
+            total_recv = great + good + bad
+            weighted = (great * 2 + good * 1)
+            mov_pct = round((weighted / (total_recv * 2)) * 100, 1) if total_recv > 0 else None
+
+            block_count   = sum(1 for b in blocks if b["blocked"])
+            block_chances = len(blocks)
+
+            accurate = sum(1 for t in reg_throws if t["accurate"])
+            throw_opps = len(reg_throws)
+            exch_errors = sum(1 for t in reg_throws if t["exchange_error"])
+            denom = throw_opps + exch_errors
+
+            summaries.append({
+                "player_id": pid,
+                "player_name": p["name"],
+                "throws": {
+                    "total": throw_opps,
+                    "accurate": accurate,
+                    "accurate_pct": round((accurate / denom) * 100, 1) if denom > 0 else 0,
+                    "avg_pop": round(sum(pop_times) / len(pop_times), 2) if pop_times else None,
+                    "cs": sum(1 for t in reg_throws if t["caught_stealing"]),
+                    "exchange_errors": exch_errors,
+                    "back_picks": len(bp_throws),
+                    "bp_outs": sum(1 for t in bp_throws if t["bp_out"]),
+                    "in_dirt": sum(1 for t in reg_throws if t["in_dirt"]),
+                    "locations": [{"x": t["throw_x"], "y": t["throw_y"], "accurate": t["accurate"]} for t in reg_throws if t["throw_x"] is not None],
+                },
+                "blocks": {
+                    "total": block_chances,
+                    "blocked": block_count,
+                    "block_pct": round((block_count / block_chances) * 100, 1) if block_chances > 0 else 0,
+                    "passed_balls": sum(1 for b in blocks if b["passed_ball"]),
+                    "wild_pitches": sum(1 for b in blocks if b["wild_pitch"]),
+                    "picks": sum(1 for b in blocks if b["is_pick"]),
+                    "locations": [{"x": b["block_x"], "y": b["block_y"], "blocked": b["blocked"], "is_pick": b["is_pick"]} for b in blocks if b["block_x"] is not None],
+                },
+                "receiving": {
+                    "great": great,
+                    "good": good,
+                    "bad": bad,
+                    "total": total_recv,
+                    "mov_pct": mov_pct,
+                    "strikes": sum(1 for r in receiving if r["is_strike"]),
+                    "balls": sum(1 for r in receiving if not r["is_strike"]),
+                    "by_hand": {
+                        "R": {"hard": 0, "soft": 0, "breaking": 0},
+                        "L": {"hard": 0, "soft": 0, "breaking": 0},
+                    },
+                    "locations": [{"x": r["pitch_x"], "y": r["pitch_y"], "quality": r["quality"], "is_strike": r["is_strike"]} for r in receiving if r["pitch_x"] is not None],
+                },
+            })
+
+            for r in receiving:
+                hand = r["pitcher_hand"]
+                pt   = r["pitch_type"]
+                if hand in ("R", "L") and pt in ("hard", "soft", "breaking"):
+                    summaries[-1]["receiving"]["by_hand"][hand][pt] += 1
+
+    return {"game": game, "catchers": summaries}
 
 # ── Videos ────────────────────────────────────────────────────────────────────
 
