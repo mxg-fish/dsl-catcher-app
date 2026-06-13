@@ -618,6 +618,10 @@ export default function GameTracker() {
                 )}
               </div>
             </div>
+            <div className="row" style={{ marginTop: 14, gap: 8 }}>
+              <button className="btn-primary btn-full btn-lg" onClick={logBlock}>Registrar Bloqueo</button>
+              <button className="btn-ghost" onClick={() => undoLast('block')} title="Deshacer">↩</button>
+            </div>
           </div>
         )}
         {/* ── RECIBIR ── */}
