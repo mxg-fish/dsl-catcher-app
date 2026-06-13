@@ -96,6 +96,7 @@ export default function GameTracker() {
   const [cs,        setCs]        = useState(false)
   const [throwLoc,  setThrowLoc]  = useState(null)   // {x, y} in feet from center of bag
   const [inDirt,    setInDirt]    = useState(false)
+  const [throwType, setThrowType] = useState('game')
 
   // ── Back pick state (per base) ─────────────────────────────────────────────
   const [bpState, setBpState] = useState({
