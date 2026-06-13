@@ -6,11 +6,9 @@ MAX_PRACTICA  = 24
 MAX_BLOCKEAR  = 17
 MAX_TIRAR     = 17
 SL_MAX        = 20
-MOV_MAX       = 14  # achievable at 100%
 
 
 def movement_points(pct: float) -> float:
-    """Convert good/great movement percentage to points."""
     if pct >= 1.00: return 14
     if pct >= 0.95: return 12
     if pct >= 0.90: return 10
@@ -23,14 +21,19 @@ def movement_points(pct: float) -> float:
 
 def calc_week_scores(week_id: int) -> list[dict]:
     with get_conn() as conn:
-        week = conn.execute("SELECT * FROM weeks WHERE id=?", (week_id,)).fetchone()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM weeks WHERE id=%s", (week_id,))
+        week = cur.fetchone()
         if not week:
             return []
         week = dict(week)
         league_avg = week["league_avg_sl_plus"] or 115.0
-        players = conn.execute("SELECT * FROM players WHERE active=1 ORDER BY name").fetchall()
-        game_ids = [r[0] for r in conn.execute("SELECT id FROM games WHERE week_id=?", (week_id,)).fetchall()]
-        ph = ",".join("?" * len(game_ids)) if game_ids else "NULL"
+
+        cur.execute("SELECT * FROM players WHERE active=1 ORDER BY name")
+        players = cur.fetchall()
+
+        cur.execute("SELECT id FROM games WHERE week_id=%s", (week_id,))
+        game_ids = [r["id"] for r in cur.fetchall()]
 
         results = []
         for p in players:
@@ -47,30 +50,29 @@ def calc_week_scores(week_id: int) -> list[dict]:
                  "great_moves": 0, "good_moves": 0, "bad_moves": 0,
                  "mov_pct": None}
 
-            # Liderazgo & Practica
-            daily = conn.execute(
-                "SELECT liderazgo, practica FROM daily_entries WHERE player_id=? AND entry_date BETWEEN ? AND ?",
+            cur.execute(
+                "SELECT liderazgo, practica FROM daily_entries WHERE player_id=%s AND entry_date BETWEEN %s AND %s",
                 (pid, week["start_date"], week["end_date"])
-            ).fetchall()
+            )
+            daily = cur.fetchall()
             s["liderazgo"] = min(sum(r["liderazgo"] for r in daily), MAX_LIDERAZGO)
             s["practica"]  = min(sum(r["practica"]  for r in daily), MAX_PRACTICA)
 
-            # SL+ score (20 pts, scaled to league avg)
-            sl = conn.execute(
-                "SELECT sl_plus FROM weekly_sl WHERE week_id=? AND player_id=?",
+            cur.execute(
+                "SELECT sl_plus FROM weekly_sl WHERE week_id=%s AND player_id=%s",
                 (week_id, pid)
-            ).fetchone()
+            )
+            sl = cur.fetchone()
             if sl and sl["sl_plus"]:
                 s["sl_plus"]  = sl["sl_plus"]
                 s["sl_score"] = round((sl["sl_plus"] / league_avg) * SL_MAX, 2)
 
             if game_ids:
+                ph = ",".join(["%s"] * len(game_ids))
                 args = [pid] + game_ids
 
-                # Throws
-                throws = conn.execute(
-                    f"SELECT * FROM throw_events WHERE player_id=? AND game_id IN ({ph})", args
-                ).fetchall()
+                cur.execute(f"SELECT * FROM throw_events WHERE player_id=%s AND game_id IN ({ph})", args)
+                throws = cur.fetchall()
                 reg_throws = [r for r in throws if not r["back_pick"]]
                 bp_throws  = [r for r in throws if r["back_pick"]]
                 s["throw_opps"]       = len(reg_throws)
@@ -88,10 +90,8 @@ def calc_week_scores(week_id: int) -> list[dict]:
                     s["tirar"] = round(pct * MAX_TIRAR, 2)
                 s["tirar"] = round(s["tirar"] + s["bp_outs"] + s["caught_stealings"], 2)
 
-                # Blocks
-                blocks = conn.execute(
-                    f"SELECT * FROM block_events WHERE player_id=? AND game_id IN ({ph})", args
-                ).fetchall()
+                cur.execute(f"SELECT * FROM block_events WHERE player_id=%s AND game_id IN ({ph})", args)
+                blocks = cur.fetchall()
                 s["block_chances"] = len(blocks)
                 s["blocks"]        = sum(r["blocked"] for r in blocks)
                 s["passed_balls"]  = sum(r["passed_ball"] for r in blocks)
@@ -101,24 +101,20 @@ def calc_week_scores(week_id: int) -> list[dict]:
                     s["block_pct"]  = round(pct * 100, 1)
                     s["blockear"]   = round(pct * MAX_BLOCKEAR, 2)
 
-                # Receiving movement
-                recv = conn.execute(
-                    f"SELECT quality FROM receiving_events WHERE player_id=? AND game_id IN ({ph})", args
-                ).fetchall()
+                cur.execute(f"SELECT quality FROM receiving_events WHERE player_id=%s AND game_id IN ({ph})", args)
+                recv = cur.fetchall()
                 s["great_moves"] = sum(1 for r in recv if r["quality"] == "great")
                 s["good_moves"]  = sum(1 for r in recv if r["quality"] == "good")
                 s["bad_moves"]   = sum(1 for r in recv if r["quality"] == "bad")
                 total_recv = s["great_moves"] + s["good_moves"] + s["bad_moves"]
 
                 if total_recv > 0:
-                    # weighted score: great=2, good=1, bad=0
                     weighted = (s["great_moves"] * 2 + s["good_moves"] * 1)
                     max_possible = total_recv * 2
                     pct = weighted / max_possible
                     s["mov_pct"]   = round(pct * 100, 1)
                     s["mov_score"] = movement_points(pct)
 
-            # Recibir = SL score + movement score (null if neither logged)
             if s["sl_score"] is not None or s["mov_score"] is not None:
                 s["recibir"] = round((s["sl_score"] or 0) + (s["mov_score"] or 0), 2)
 
@@ -136,7 +132,9 @@ def calc_week_scores(week_id: int) -> list[dict]:
 
 def calc_season_scores(season_id: int) -> list[dict]:
     with get_conn() as conn:
-        weeks = conn.execute("SELECT id FROM weeks WHERE season_id=?", (season_id,)).fetchall()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM weeks WHERE season_id=%s", (season_id,))
+        weeks = cur.fetchall()
 
     totals: dict[int, dict] = {}
     for w in weeks:
