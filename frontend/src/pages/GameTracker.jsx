@@ -757,7 +757,7 @@ export default function GameTracker() {
         <h3 style={{ marginBottom: 8 }}>Eventos del Juego</h3>
         {log.throws.slice(0, 6).map(t => (
           <div key={t.id} className="badge badge-blue" style={{ display: 'block', marginBottom: 4, fontSize: 12 }}>
-            E{t.inning ?? '?'} {t.player_name} — Tiro {t.accurate ? '✅' : '❌'} {t.pop_time ? `${t.pop_time}s` : ''} {t.in_dirt ? '🟫' : ''} {t._offline ? '📥' : ''}
+            E{t.inning ?? '?'} {t.player_name} — {t.throw_type === 'between' ? '↔' : t.throw_type === 'practice' ? '🏋️' : '⚾'} Tiro {t.accurate ? '✅' : '❌'} {t.pop_time ? `${t.pop_time}s` : ''} {t.in_dirt ? '🟫' : ''} {t._offline ? '📥' : ''}
           </div>
         ))}
         {log.blocks.slice(0, 6).map(b => (
