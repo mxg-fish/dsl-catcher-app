@@ -2,14 +2,13 @@
 
 import os
 import psycopg2
-import psycopg2.extras
-from contextlib import contextmanager
 from psycopg2.extras import RealDictCursor
+from contextlib import contextmanager
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 CATCHERS = [
-    "Moises Morales", "Kevin Robledo", "Diego Martinez",
+    "Moises Morales", "Diego Martinez",
     "Francisco Del Campo", "Carlos Martinez", "Daniel Pire",
     "Yendi Pirela", "Eliecer Mendoza", "Alexander Requena",
 ]
@@ -17,7 +16,7 @@ CATCHERS = [
 
 @contextmanager
 def get_conn():
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     conn.autocommit = False
     try:
         yield conn
