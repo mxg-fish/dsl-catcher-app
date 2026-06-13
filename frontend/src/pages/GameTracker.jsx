@@ -198,10 +198,11 @@ export default function GameTracker() {
       throw_y: throwLoc?.y ?? null,
       in_dirt: inDirt,
       inning,
+      throw_type: throwType,
     }, 'throw')
     showToast(online ? '✅ Tiro registrado' : '📥 Guardado offline')
     setPopTime(''); setAccurate(true); setExchange(false)
-    setCs(false); setThrowLoc(null); setInDirt(false)
+    setCs(false); setThrowLoc(null); setInDirt(false); setThrowType('game')
   }
 
   // ── Log back pick ──────────────────────────────────────────────────────────
