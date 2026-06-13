@@ -135,6 +135,7 @@ def init_db():
             uploaded_at TIMESTAMP DEFAULT NOW()
         );
         """)
+        cur.execute("""ALTER TABLE games ADD COLUMN IF NOT EXISTS completed INTEGER NOT NULL DEFAULT 0""")
 
         cur.execute("INSERT INTO seasons(year) VALUES(2026) ON CONFLICT DO NOTHING")
         for name in CATCHERS:
