@@ -221,10 +221,10 @@ class BulkSyncBody(BaseModel):
 def log_throw(game_id: int, body: ThrowEvent, _=Depends(current_user)):
     with db.get_conn() as conn:
         cur = conn.execute(
-            "INSERT INTO throw_events(game_id,player_id,pop_time,accurate,exchange_error,back_pick,back_pick_base,bp_out,caught_stealing,throw_x,throw_y,in_dirt,inning) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO throw_events(game_id,player_id,pop_time,accurate,exchange_error,back_pick,back_pick_base,bp_out,caught_stealing,throw_x,throw_y,in_dirt,inning,throw_type) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (game_id, body.player_id, body.pop_time, int(body.accurate), int(body.exchange_error),
              int(body.back_pick), body.back_pick_base, int(body.bp_out), int(body.caught_stealing),
-             body.throw_x, body.throw_y, int(body.in_dirt), body.inning)
+             body.throw_x, body.throw_y, int(body.in_dirt), body.inning, body.throw_type)
         )
         conn.commit()
         return {"id": cur.lastrowid}
