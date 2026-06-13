@@ -424,6 +424,21 @@ export default function GameTracker() {
         {/* ── TIRAR ── */}
         {tab === 0 && (
           <div>
+            <label>Tipo de Tiro</label>
+            <div className="row" style={{ marginTop: 4, marginBottom: 12 }}>
+              {[['game', '⚾ Juego'], ['between', '↔ Entre Entradas'], ['practice', '🏋️ Práctica']].map(([val, lbl]) => (
+                <button key={val} className="col"
+                  style={{
+                    background: throwType === val ? '#1a3a5c' : '#2a2a2a',
+                    color: throwType === val ? '#74b9ff' : '#888',
+                    fontSize: 12,
+                  }}
+                  onClick={() => setThrowType(val)}>{lbl}</button>
+              ))}
+            </div>
+            <div className="row" style={{ gap: 8 }}>
+              <div className="col">
+                <label>Tiempo (seg)</label>
             <div className="row" style={{ gap: 8 }}>
               <div className="col">
                 <label>Tiempo (seg)</label>
