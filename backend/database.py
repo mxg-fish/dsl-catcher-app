@@ -38,5 +38,17 @@ def init_db():
             hashed_password TEXT NOT NULL,
             role TEXT NOT NULL DEFAULT 'coach'
         );
-
-        CREATE
+        CREATE TABLE IF NOT EXISTS players (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            active INTEGER NOT NULL DEFAULT 1
+        );
+        CREATE TABLE IF NOT EXISTS seasons (
+            id SERIAL PRIMARY KEY,
+            year INTEGER NOT NULL UNIQUE
+        );
+        CREATE TABLE IF NOT EXISTS weeks (
+            id SERIAL PRIMARY KEY,
+            season_id INTEGER NOT NULL REFERENCES seasons(id),
+            week_number INTEGER NOT NULL,
+            start_date TEXT NOT NULL,
