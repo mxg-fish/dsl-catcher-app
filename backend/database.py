@@ -150,6 +150,10 @@ def init_db():
         if "pitch_type" not in cols:
             conn.execute("ALTER TABLE receiving_events ADD COLUMN pitch_type TEXT")
         conn.commit()
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(throw_events)").fetchall()]
+        if "throw_type" not in cols:
+            conn.execute("ALTER TABLE throw_events ADD COLUMN throw_type TEXT DEFAULT 'game'")
+        conn.commit()
 
         # Seed season and players
         conn.execute("INSERT OR IGNORE INTO seasons(year) VALUES(2026)")
