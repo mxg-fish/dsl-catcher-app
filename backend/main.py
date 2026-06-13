@@ -184,6 +184,7 @@ class ThrowEvent(BaseModel):
     throw_y: Optional[float] = None
     in_dirt: bool = False
     inning: Optional[int] = None
+    throw_type: Optional[str] = 'game'  # 'game' | 'between' | 'practice'
 
 
 class BlockEvent(BaseModel):
