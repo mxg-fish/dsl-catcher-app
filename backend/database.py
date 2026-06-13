@@ -4,6 +4,7 @@ import os
 import psycopg2
 import psycopg2.extras
 from contextlib import contextmanager
+from psycopg2.extras import RealDictCursor
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
