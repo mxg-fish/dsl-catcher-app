@@ -344,8 +344,14 @@ export default function GameTracker() {
               {games.map(g => <option key={g.id} value={g.id}>{g.game_date} {g.opponent ? `vs ${g.opponent}` : ''}</option>)}
             </select>
           </div>
-          <div style={{ alignSelf: 'flex-end' }}>
+          <div style={{ alignSelf: 'flex-end', display:'flex', gap:8 }}>
             <button className="btn-success" onClick={() => setShowNewGame(!showNewGame)}>+ Juego</button>
+            {gameId && (
+              <button className="btn-primary" onClick={async () => {
+                await api.patch(`/games/${gameId}/complete`)
+                window.location.href = `/summary/${gameId}`
+              }}>Finalizar Juego →</button>
+            )}
           </div>
         </div>
         {showNewGame && (

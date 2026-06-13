@@ -3,13 +3,14 @@ import { useState, useEffect } from 'react'
 import { getPendingCount, flushQueue } from '../offlineQueue'
 
 const NAV = [
-  { to: '/game',   label: '🎮 Juego'     },
-  { to: '/weekly', label: '🏆 Semana'    },
-  { to: '/season', label: '📅 Temporada' },
-  { to: '/player', label: '👤 Jugador'   },
-  { to: '/daily',  label: '📋 Diario'    },
-  { to: '/sl',     label: '📊 SL+'       },
-  { to: '/admin',  label: '⚙️ Admin'     },
+  { to: '/game',    label: '🎮 Juego'     },
+  { to: '/weekly',  label: '🏆 Semana'    },
+  { to: '/season',  label: '📅 Temporada' },
+  { to: '/player',  label: '👤 Jugador'   },
+  { to: '/daily',   label: '📋 Diario'    },
+  { to: '/sl',      label: '📊 SL+'       },
+  { to: '/admin',   label: '⚙️ Admin'     },
+  { to: '/gamelog', label: '📋 Log' },
 ]
 
 export default function Layout() {

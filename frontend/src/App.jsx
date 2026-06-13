@@ -8,6 +8,8 @@ import PlayerProfile from './pages/PlayerProfile'
 import DailyEntry from './pages/DailyEntry'
 import SLEntry from './pages/SLEntry'
 import Admin from './pages/Admin'
+import GameSummary from './pages/GameSummary'
+import GameLog from './pages/GameLog'
 
 function RequireAuth({ children }) {
   return localStorage.getItem('token') ? children : <Navigate to="/login" replace />
@@ -26,6 +28,8 @@ export default function App() {
           <Route path="player"  element={<PlayerProfile />} />
           <Route path="daily"   element={<DailyEntry />} />
           <Route path="sl"      element={<SLEntry />} />
+	  <Route path="gamelog"        element={<GameLog />} />
+          <Route path="summary/:gameId" element={<GameSummary />} />
           <Route path="admin"   element={<Admin />} />
         </Route>
       </Routes>
