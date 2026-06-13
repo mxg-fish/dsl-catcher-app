@@ -33,7 +33,9 @@ def decode_token(token: str) -> Optional[str]:
 
 def get_user(username: str) -> Optional[dict]:
     with get_conn() as conn:
-        row = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM users WHERE username=%s", (username,))
+        row = cur.fetchone()
         return dict(row) if row else None
 
 
@@ -46,17 +48,19 @@ def authenticate(username: str, password: str) -> Optional[dict]:
 
 def create_user(username: str, password: str, role: str = "coach"):
     with get_conn() as conn:
-        conn.execute(
-            "INSERT INTO users(username, hashed_password, role) VALUES(?,?,?)",
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO users(username, hashed_password, role) VALUES(%s,%s,%s)",
             (username, hash_password(password), role)
         )
-        conn.commit()
 
 
 def ensure_default_admin():
     """Create default admin account if no users exist."""
     with get_conn() as conn:
-        count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-        if count == 0:
-            create_user("admin", "marlins2025", "admin")
-            print("Default admin created: admin / marlins2025")
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) as count FROM users")
+        row = cur.fetchone()
+        if row["count"] == 0:
+            create_user("admin", "Marlins2026", "admin")
+            print("Default admin created: admin / Marlins2026")
