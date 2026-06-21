@@ -146,12 +146,17 @@ export default function GameTracker() {
   }, [seasonId])
 
   useEffect(() => {
-    if (!weekId) return
-    api.get(`/weeks/${weekId}/games`).then(r => {
-      setGames(r.data)
-      if (r.data.at(-1)) setGameId(String(r.data.at(-1).id))
-    })
-  }, [weekId])
+  if (!weekId) return
+  api.get(`/weeks/${weekId}/games`).then(r => {
+    setGames(r.data)
+    const urlGameId = searchParams.get('gameId')
+    if (urlGameId && r.data.some(g => String(g.id) === urlGameId)) {
+      setGameId(urlGameId)
+    } else if (r.data.at(-1)) {
+      setGameId(String(r.data.at(-1).id))
+    }
+  })
+}, [weekId, searchParams])
 
   const loadLog = useCallback(() => {
     if (!gameId) return
