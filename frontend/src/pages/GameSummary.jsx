@@ -285,7 +285,15 @@ export default function GameSummary() {
       <div className="no-print" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
         <button className="btn-ghost" onClick={() => nav(-1)}>← Volver</button>
         <h2 style={{ margin:0 }}>Resumen del Juego</h2>
-        <button className="btn-primary" onClick={handlePrint}>🖨️ Imprimir / PDF</button>
+        <div style={{ display:'flex', gap:8 }}>
+  {game.completed ? (
+    <button className="btn-ghost" onClick={async () => {
+      await api.patch(`/games/${gameId}/reopen`)
+      nav('/game')
+    }}>✏️ Editar Juego</button>
+  ) : null}
+  <button className="btn-primary" onClick={handlePrint}>🖨️ Imprimir / PDF</button>
+</div>
       </div>
 
       <div style={{ color:'#888', fontSize:13, marginBottom:20 }}>
