@@ -272,6 +272,7 @@ export default function GameSummary() {
   if (!summary || summary.catchers.length === 0) return <div className="page" style={{ color:'#888' }}>Sin datos para este juego.</div>
 
   const game = summary.game
+  console.log('completed value:', game.completed, typeof game.completed)
 
   return (
     <div className="page" ref={printRef}>
