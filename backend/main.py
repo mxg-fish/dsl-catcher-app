@@ -431,6 +431,12 @@ def complete_game(game_id: int, _=Depends(current_user)):
         cur.execute("UPDATE games SET completed=1 WHERE id=%s", (game_id,))
     return {"ok": True}
 
+@app.patch("/api/games/{game_id}/reopen")
+def reopen_game(game_id: int, _=Depends(current_user)):
+    with db.get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("UPDATE games SET completed=0 WHERE id=%s", (game_id,))
+    return {"ok": True}
 
 @app.get("/api/games/{game_id}/summary")
 def game_summary(game_id: int, _=Depends(current_user)):
