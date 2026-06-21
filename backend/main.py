@@ -268,21 +268,24 @@ def bulk_sync(game_id: int, body: BulkSyncBody, _=Depends(current_user)):
         cur = conn.cursor()
         for e in body.throws:
             cur.execute(
-                "INSERT INTO throw_events(game_id,player_id,pop_time,accurate,exchange_error,back_pick,back_pick_base,bp_out,caught_stealing) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+                "INSERT INTO throw_events(game_id,player_id,pop_time,accurate,exchange_error,back_pick,back_pick_base,bp_out,caught_stealing,throw_x,throw_y,in_dirt,inning,throw_type) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
                 (game_id, e.player_id, e.pop_time, int(e.accurate), int(e.exchange_error),
-                 int(e.back_pick), e.back_pick_base, int(e.bp_out), int(e.caught_stealing))
+                 int(e.back_pick), e.back_pick_base, int(e.bp_out), int(e.caught_stealing),
+                 e.throw_x, e.throw_y, int(e.in_dirt), e.inning, e.throw_type)
             )
             ids["throws"].append(cur.fetchone()["id"])
         for e in body.blocks:
             cur.execute(
-                "INSERT INTO block_events(game_id,player_id,location,blocked,passed_ball,wild_pitch) VALUES(%s,%s,%s,%s,%s,%s) RETURNING id",
-                (game_id, e.player_id, e.location, int(e.blocked), int(e.passed_ball), int(e.wild_pitch))
+                "INSERT INTO block_events(game_id,player_id,location,blocked,passed_ball,wild_pitch,is_pick,block_x,block_y) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+                (game_id, e.player_id, e.location, int(e.blocked), int(e.passed_ball),
+                 int(e.wild_pitch), int(e.is_pick), e.block_x, e.block_y)
             )
             ids["blocks"].append(cur.fetchone()["id"])
         for e in body.receiving:
             cur.execute(
-                "INSERT INTO receiving_events(game_id,player_id,quality,is_strike,pitch_x,pitch_y,note) VALUES(%s,%s,%s,%s,%s,%s,%s) RETURNING id",
-                (game_id, e.player_id, e.quality, int(e.is_strike), e.pitch_x, e.pitch_y, e.note)
+                "INSERT INTO receiving_events(game_id,player_id,quality,is_strike,pitch_x,pitch_y,note,inning,pitcher_hand,pitch_type) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+                (game_id, e.player_id, e.quality, int(e.is_strike), e.pitch_x, e.pitch_y,
+                 e.note, e.inning, e.pitcher_hand, e.pitch_type)
             )
             ids["receiving"].append(cur.fetchone()["id"])
     return ids
