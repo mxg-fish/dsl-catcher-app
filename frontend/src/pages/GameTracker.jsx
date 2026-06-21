@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import api from '../api'
 import { enqueue } from '../offlineQueue'
 import StrikeZone from '../components/StrikeZone'
@@ -78,6 +79,7 @@ export default function GameTracker() {
   const [seasonId, setSeasonId] = useState('')
   const [weekId,   setWeekId]   = useState('')
   const [gameId,   setGameId]   = useState('')
+  const [searchParams] = useSearchParams()
   const [playerId, setPlayerId] = useState('')
   const [tab,      setTab]      = useState(0)
   const [inning,   setInning]   = useState(1)
