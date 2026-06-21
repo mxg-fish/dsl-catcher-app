@@ -56,9 +56,15 @@ export default function GameLog() {
               {g.completed ? <span style={{ color:'#00c896' }}>✅ Completado</span> : <span style={{ color:'#e9c46a' }}>⏳ En progreso</span>}
             </div>
           </div>
-          <button className="btn-primary" onClick={() => nav(`/summary/${g.id}`)}>
-            Ver Resumen →
-          </button>
+          {g.completed ? (
+  <button className="btn-primary" onClick={() => nav(`/summary/${g.id}`)}>
+    Ver Resumen →
+  </button>
+) : (
+  <button className="btn-primary" onClick={() => nav(`/game?gameId=${g.id}`)}>
+    Continuar Editando →
+  </button>
+)}
         </div>
       ))}
     </div>
