@@ -131,15 +131,15 @@ class WeekBody(BaseModel):
     start_date: str
     end_date: str
     league_avg_sl_plus: float = 115.0
-
+    league_avg_pbwp: float = 100.0
 
 @app.post("/api/seasons/{season_id}/weeks")
 def add_week(season_id: int, body: WeekBody, _=Depends(current_user)):
     with db.get_conn() as conn:
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO weeks(season_id,week_number,start_date,end_date,league_avg_sl_plus) VALUES(%s,%s,%s,%s,%s) ON CONFLICT(season_id,week_number) DO UPDATE SET start_date=EXCLUDED.start_date, end_date=EXCLUDED.end_date, league_avg_sl_plus=EXCLUDED.league_avg_sl_plus",
-            (season_id, body.week_number, body.start_date, body.end_date, body.league_avg_sl_plus)
+            "INSERT INTO weeks(season_id,week_number,start_date,end_date,league_avg_sl_plus,league_avg_pbwp) VALUES(%s,%s,%s,%s,%s,%s) ON CONFLICT(season_id,week_number) DO UPDATE SET start_date=EXCLUDED.start_date, end_date=EXCLUDED.end_date, league_avg_sl_plus=EXCLUDED.league_avg_sl_plus, league_avg_pbwp=EXCLUDED.league_avg_pbwp",
+            (season_id, body.week_number, body.start_date, body.end_date, body.league_avg_sl_plus, body.league_avg_pbwp)
         )
     return {"ok": True}
 
@@ -151,6 +151,12 @@ def update_league_avg(week_id: int, body: dict, _=Depends(current_user)):
         cur.execute("UPDATE weeks SET league_avg_sl_plus=%s WHERE id=%s", (body["league_avg_sl_plus"], week_id))
     return {"ok": True}
 
+@app.patch("/api/weeks/{week_id}/league-avg-pbwp")
+def update_league_avg_pbwp(week_id: int, body: dict, _=Depends(current_user)):
+    with db.get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("UPDATE weeks SET league_avg_pbwp=%s WHERE id=%s", (body["league_avg_pbwp"], week_id))
+    return {"ok": True}
 
 # ── Games ─────────────────────────────────────────────────────────────────────
 
