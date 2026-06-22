@@ -90,6 +90,7 @@ export default function GameTracker() {
   const [newDate,     setNewDate]     = useState(new Date().toISOString().slice(0, 10))
   const [newOpponent, setNewOpponent] = useState('')
   const [showNewGame, setShowNewGame] = useState(false)
+  const [editEvent, setEditEvent] = useState(null)
 
   // ── Throw form state ───────────────────────────────────────────────────────
   const [popTime,   setPopTime]   = useState('')
@@ -766,24 +767,108 @@ export default function GameTracker() {
       <div className="card" style={{ maxHeight: 220, overflowY: 'auto' }}>
         <h3 style={{ marginBottom: 8 }}>Eventos del Juego</h3>
         {log.throws.slice(0, 6).map(t => (
-          <div key={t.id} className="badge badge-blue" style={{ display: 'block', marginBottom: 4, fontSize: 12 }}>
-            E{t.inning ?? '?'} {t.player_name} — {t.throw_type === 'between' ? '↔' : t.throw_type === 'practice' ? '🏋️' : '⚾'} Tiro {t.accurate ? '✅' : '❌'} {t.pop_time ? `${t.pop_time}s` : ''} {t.in_dirt ? '🟫' : ''} {t._offline ? '📥' : ''}
+          <div key={t.id} className="badge badge-blue" style={{ display: 'block', marginBottom: 4, fontSize: 12, cursor: 'pointer' }}
+            onClick={() => setEditEvent({ type: 'throw', id: t.id, player_id: t.player_id, pop_time: t.pop_time ?? '', accurate: !!t.accurate })}>
+            E{t.inning ?? '?'} {t.player_name} — {t.throw_type === 'between' ? '↔' : t.throw_type === 'practice' ? '🏋️' : '⚾'} Tiro {t.accurate ? '✅' : '❌'} {t.pop_time ? `${t.pop_time}s` : ''} {t.in_dirt ? '🟫' : ''} {t._offline ? '📥' : ''} ✏️
           </div>
         ))}
         {log.blocks.slice(0, 6).map(b => (
-          <div key={b.id} className={`badge ${b.blocked ? 'badge-green' : 'badge-red'}`} style={{ display: 'block', marginBottom: 4, fontSize: 12 }}>
-            {b.player_name} — Bloqueo {b.blocked ? '✅' : '❌'} ({b.location}) {b._offline ? '📥' : ''}
+          <div key={b.id} className={`badge ${b.blocked ? 'badge-green' : 'badge-red'}`} style={{ display: 'block', marginBottom: 4, fontSize: 12, cursor: 'pointer' }}
+            onClick={() => setEditEvent({ type: 'block', id: b.id, player_id: b.player_id, location: b.location, blocked: !!b.blocked, passed_ball: !!b.passed_ball, wild_pitch: !!b.wild_pitch })}>
+            {b.player_name} — Bloqueo {b.blocked ? '✅' : '❌'} ({b.location}) {b._offline ? '📥' : ''} ✏️
           </div>
         ))}
         {log.receiving.slice(0, 6).map(r => (
-          <div key={r.id} className={`badge ${r.quality === 'great' ? 'badge-green' : r.quality === 'good' ? 'badge-green' : 'badge-red'}`} style={{ display: 'block', marginBottom: 4, fontSize: 12 }}>
-            E{r.inning ?? '?'} {r.player_name} — {r.quality === 'great' ? '⭐ Gran' : r.quality === 'good' ? '✅ Buen' : '❌ Mal'} Mov {r.is_strike ? 'Strike' : 'Bola'} {r._offline ? '📥' : ''}
+          <div key={r.id} className={`badge ${r.quality === 'great' ? 'badge-green' : r.quality === 'good' ? 'badge-green' : 'badge-red'}`} style={{ display: 'block', marginBottom: 4, fontSize: 12, cursor: 'pointer' }}
+            onClick={() => setEditEvent({ type: 'receiving', id: r.id, player_id: r.player_id, quality: r.quality, is_strike: !!r.is_strike })}>
+            E{r.inning ?? '?'} {r.player_name} — {r.quality === 'great' ? '⭐ Gran' : r.quality === 'good' ? '✅ Buen' : '❌ Mal'} Mov {r.is_strike ? 'Strike' : 'Bola'} {r._offline ? '📥' : ''} ✏️
           </div>
         ))}
         {log.throws.length + log.blocks.length + log.receiving.length === 0 && (
           <p style={{ color: '#666', fontSize: 13 }}>Sin eventos aún.</p>
         )}
       </div>
+
+      {/* Edit event modal */}
+      {editEvent && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}
+          onClick={() => setEditEvent(null)}>
+          <div className="card" style={{ width: 320, maxWidth: '90vw' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ marginBottom: 12 }}>Editar Evento</h3>
+
+            <label>Catcher</label>
+            <select value={editEvent.player_id} onChange={e => setEditEvent({ ...editEvent, player_id: parseInt(e.target.value) })}>
+              {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+
+            {editEvent.type === 'throw' && (
+              <>
+                <label style={{ marginTop: 10 }}>Tiempo (seg)</label>
+                <input type="number" step="0.01" value={editEvent.pop_time} onChange={e => setEditEvent({ ...editEvent, pop_time: e.target.value })} />
+                <label style={{ marginTop: 10 }}>¿Preciso?</label>
+                <div className="row" style={{ marginTop: 4 }}>
+                  <button className={editEvent.accurate ? 'btn-success col' : 'btn-ghost col'} onClick={() => setEditEvent({ ...editEvent, accurate: true })}>✅ Sí</button>
+                  <button className={!editEvent.accurate ? 'btn-danger col' : 'btn-ghost col'} onClick={() => setEditEvent({ ...editEvent, accurate: false })}>❌ No</button>
+                </div>
+              </>
+            )}
+
+            {editEvent.type === 'block' && (
+              <>
+                <label style={{ marginTop: 10 }}>Ubicación</label>
+                <div className="row" style={{ marginTop: 4 }}>
+                  {[['middle', 'Centro'], ['gloveside', 'Guante'], ['armside', 'Brazo']].map(([val, lbl]) => (
+                    <button key={val} className="col"
+                      style={{ background: editEvent.location === val ? '#1a3a5c' : '#2a2a2a', color: editEvent.location === val ? '#74b9ff' : '#888' }}
+                      onClick={() => setEditEvent({ ...editEvent, location: val })}>{lbl}</button>
+                  ))}
+                </div>
+                <label style={{ marginTop: 10 }}>Resultado</label>
+                <div className="row" style={{ marginTop: 4 }}>
+                  <button className={editEvent.blocked ? 'btn-success col' : 'btn-ghost col'}
+                    onClick={() => setEditEvent({ ...editEvent, blocked: true, passed_ball: false, wild_pitch: false })}>✅ Bloqueado</button>
+                  <button className={editEvent.passed_ball ? 'btn-danger col' : 'btn-ghost col'}
+                    onClick={() => setEditEvent({ ...editEvent, blocked: false, passed_ball: true, wild_pitch: false })}>PB</button>
+                  <button className={editEvent.wild_pitch ? 'btn-danger col' : 'btn-ghost col'}
+                    onClick={() => setEditEvent({ ...editEvent, blocked: false, passed_ball: false, wild_pitch: true })}>WP</button>
+                </div>
+              </>
+            )}
+
+            {editEvent.type === 'receiving' && (
+              <>
+                <label style={{ marginTop: 10 }}>Calidad</label>
+                <div className="row" style={{ marginTop: 4, gap: 4 }}>
+                  <button className={editEvent.quality === 'great' ? 'btn-success col' : 'btn-ghost col'} onClick={() => setEditEvent({ ...editEvent, quality: 'great' })}>⭐ Gran</button>
+                  <button className={editEvent.quality === 'good' ? 'btn-success col' : 'btn-ghost col'} onClick={() => setEditEvent({ ...editEvent, quality: 'good' })}>✅ Buen</button>
+                  <button className={editEvent.quality === 'bad' ? 'btn-danger col' : 'btn-ghost col'} onClick={() => setEditEvent({ ...editEvent, quality: 'bad' })}>❌ Mal</button>
+                </div>
+                <label style={{ marginTop: 10 }}>Resultado</label>
+                <div className="row" style={{ marginTop: 4 }}>
+                  <button className={editEvent.is_strike ? 'btn-primary col' : 'btn-ghost col'} onClick={() => setEditEvent({ ...editEvent, is_strike: true })}>Strike</button>
+                  <button className={!editEvent.is_strike ? 'btn-primary col' : 'btn-ghost col'} onClick={() => setEditEvent({ ...editEvent, is_strike: false })}>Bola</button>
+                </div>
+              </>
+            )}
+
+            <div className="row" style={{ marginTop: 16, gap: 8 }}>
+              <button className="btn-primary col" onClick={async () => {
+                if (editEvent.type === 'throw') {
+                  await api.patch(`/throws/${editEvent.id}`, { player_id: editEvent.player_id, pop_time: editEvent.pop_time ? parseFloat(editEvent.pop_time) : null, accurate: editEvent.accurate })
+                } else if (editEvent.type === 'block') {
+                  await api.patch(`/blocks/${editEvent.id}`, { player_id: editEvent.player_id, location: editEvent.location, blocked: editEvent.blocked, passed_ball: editEvent.passed_ball, wild_pitch: editEvent.wild_pitch })
+                } else if (editEvent.type === 'receiving') {
+                  await api.patch(`/receiving/${editEvent.id}`, { player_id: editEvent.player_id, quality: editEvent.quality, is_strike: editEvent.is_strike })
+                }
+                setEditEvent(null)
+                loadLog()
+                showToast('✅ Evento actualizado')
+              }}>Guardar</button>
+              <button className="btn-ghost col" onClick={() => setEditEvent(null)}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
