@@ -326,6 +326,58 @@ def undo_last_event(game_id: int, event_type: str, player_id: int, _=Depends(cur
         )
     return {"ok": True}
 
+class ThrowEditBody(BaseModel):
+    player_id: int
+    pop_time: Optional[float] = None
+    accurate: bool = False
+
+
+class BlockEditBody(BaseModel):
+    player_id: int
+    location: str
+    blocked: bool = False
+    passed_ball: bool = False
+    wild_pitch: bool = False
+
+
+class ReceivingEditBody(BaseModel):
+    player_id: int
+    quality: str
+    is_strike: bool = False
+
+
+@app.patch("/api/throws/{event_id}")
+def edit_throw(event_id: int, body: ThrowEditBody, _=Depends(current_user)):
+    with db.get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE throw_events SET player_id=%s, pop_time=%s, accurate=%s WHERE id=%s",
+            (body.player_id, body.pop_time, int(body.accurate), event_id)
+        )
+    return {"ok": True}
+
+
+@app.patch("/api/blocks/{event_id}")
+def edit_block(event_id: int, body: BlockEditBody, _=Depends(current_user)):
+    with db.get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE block_events SET player_id=%s, location=%s, blocked=%s, passed_ball=%s, wild_pitch=%s WHERE id=%s",
+            (body.player_id, body.location, int(body.blocked), int(body.passed_ball), int(body.wild_pitch), event_id)
+        )
+    return {"ok": True}
+
+
+@app.patch("/api/receiving/{event_id}")
+def edit_receiving(event_id: int, body: ReceivingEditBody, _=Depends(current_user)):
+    with db.get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE receiving_events SET player_id=%s, quality=%s, is_strike=%s WHERE id=%s",
+            (body.player_id, body.quality, int(body.is_strike), event_id)
+        )
+    return {"ok": True}
+
 
 # ── Daily Entries ─────────────────────────────────────────────────────────────
 
