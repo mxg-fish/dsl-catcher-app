@@ -432,10 +432,10 @@ def save_sl(week_id: int, body: SLEntry, _=Depends(current_user)):
     with db.get_conn() as conn:
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO weekly_sl(week_id,player_id,sl_plus,shadow_strike_pct,lg_rank) VALUES(%s,%s,%s,%s,%s) ON CONFLICT(week_id,player_id) DO UPDATE SET sl_plus=EXCLUDED.sl_plus, shadow_strike_pct=EXCLUDED.shadow_strike_pct, lg_rank=EXCLUDED.lg_rank",
+            "INSERT INTO weekly_sl(week_id,player_id,sl_plus,shadow_strike_pct,lg_rank,pbwp_plus,pitches_caught,sl_rank,pbwp_rank) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT(week_id,player_id) DO UPDATE SET sl_plus=EXCLUDED.sl_plus, shadow_strike_pct=EXCLUDED.shadow_strike_pct, lg_rank=EXCLUDED.lg_rank, pbwp_plus=EXCLUDED.pbwp_plus, pitches_caught=EXCLUDED.pitches_caught, sl_rank=EXCLUDED.sl_rank, pbwp_rank=EXCLUDED.pbwp_rank",
             (week_id, body.player_id, body.sl_plus,
              body.shadow_strike_pct / 100 if body.shadow_strike_pct else None,
-             body.lg_rank)
+             body.lg_rank, body.pbwp_plus, body.pitches_caught, body.sl_rank, body.pbwp_rank)
         )
     return {"ok": True}
 
