@@ -137,6 +137,14 @@ def init_db():
         """)
         cur.execute("""ALTER TABLE games ADD COLUMN IF NOT EXISTS completed INTEGER NOT NULL DEFAULT 0""")
 
+        cur.execute("""CREATE TABLE IF NOT EXISTS notes (
+            id SERIAL PRIMARY KEY,
+            player_id INTEGER NOT NULL REFERENCES players(id),
+            note_date TEXT NOT NULL,
+            note_text TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""")
+
         cur.execute("INSERT INTO seasons(year) VALUES(2026) ON CONFLICT DO NOTHING")
         for name in CATCHERS:
             cur.execute("INSERT INTO players(name) VALUES(%s) ON CONFLICT DO NOTHING", (name,))
