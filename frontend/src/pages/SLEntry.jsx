@@ -97,19 +97,16 @@ export default function SLEntry() {
           </div>
           <button className="btn-success" onClick={updateAvg}>Actualizar</button>
         </div>
-        <div className="row" style={{ alignItems:'flex-end', gap:8 }}>
-          <div className="col">
-            <label>Liga Promedio PBWP+</label>
-            <input type="number" value={leagueAvgPbwp} onChange={e=>setLeagueAvgPbwp(parseFloat(e.target.value))} />
-          </div>
-          <button className="btn-success" onClick={updateAvgPbwp}>Actualizar</button>
-        </div>
       </div>
 
       {players.map(p => {
         const f = form[p.id] || { sl_plus:'', shadow:'', rank:'', pbwp_plus:'', pitches_caught:'', sl_rank:'', pbwp_rank:'' }
         const slScore = f.sl_plus && leagueAvg ? ((parseFloat(f.sl_plus)/leagueAvg)*20).toFixed(1) : '—'
-        const pbwpScore = f.pbwp_plus && leagueAvgPbwp ? ((parseFloat(f.pbwp_plus)/leagueAvgPbwp)*8.5).toFixed(1) : '—'
+        const pbwpScore = f.pbwp_plus ? (() => {
+          const v = parseFloat(f.pbwp_plus)
+          if (v >= 45) return (5 + 5.5 * Math.pow(Math.min((v-45)/(150-45), 1.0), 1.5)).toFixed(1)
+          return (5 * Math.pow(Math.max((v-10)/(45-10), 0), 1.5)).toFixed(1)
+        })() : '—'
         return (
           <div key={p.id} className="card">
             <div style={{ fontWeight:600, marginBottom:8, fontSize:15 }}>{p.name}</div>
