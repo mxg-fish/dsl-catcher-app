@@ -137,6 +137,12 @@ def init_db():
         """)
         cur.execute("""ALTER TABLE games ADD COLUMN IF NOT EXISTS completed INTEGER NOT NULL DEFAULT 0""")
 
+        cur.execute("""ALTER TABLE weekly_sl ADD COLUMN IF NOT EXISTS pbwp_plus REAL""")
+        cur.execute("""ALTER TABLE weekly_sl ADD COLUMN IF NOT EXISTS pitches_caught INTEGER""")
+        cur.execute("""ALTER TABLE weekly_sl ADD COLUMN IF NOT EXISTS sl_rank INTEGER""")
+        cur.execute("""ALTER TABLE weekly_sl ADD COLUMN IF NOT EXISTS pbwp_rank INTEGER""")
+        cur.execute("""ALTER TABLE weeks ADD COLUMN IF NOT EXISTS league_avg_pbwp REAL DEFAULT 100""")
+
         cur.execute("""CREATE TABLE IF NOT EXISTS notes (
             id SERIAL PRIMARY KEY,
             player_id INTEGER NOT NULL REFERENCES players(id),
