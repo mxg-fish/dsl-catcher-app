@@ -48,15 +48,16 @@ def calc_week_scores(week_id: int) -> list[dict]:
                  "back_picks": 0, "bp_outs": 0, "caught_stealings": 0,
                  "avg_pop_time": None, "accurate_throw_pct": 0.0,
                  "great_moves": 0, "good_moves": 0, "bad_moves": 0,
-                 "mov_pct": None}
+                 "mov_pct": None, "daily_breakdown": []} None}
 
             cur.execute(
-                "SELECT liderazgo, practica FROM daily_entries WHERE player_id=%s AND entry_date BETWEEN %s AND %s",
+                "SELECT entry_date, liderazgo, practica FROM daily_entries WHERE player_id=%s AND entry_date BETWEEN %s AND %s ORDER BY entry_date",
                 (pid, week["start_date"], week["end_date"])
             )
             daily = cur.fetchall()
             s["liderazgo"] = min(sum(r["liderazgo"] for r in daily), MAX_LIDERAZGO)
             s["practica"]  = min(sum(r["practica"]  for r in daily), MAX_PRACTICA)
+            s["daily_breakdown"] = [{"date": r["entry_date"], "liderazgo": r["liderazgo"], "practica": r["practica"]} for r in daily]
 
             cur.execute(
                 "SELECT sl_plus FROM weekly_sl WHERE week_id=%s AND player_id=%s",
