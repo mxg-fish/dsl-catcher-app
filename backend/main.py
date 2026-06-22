@@ -421,6 +421,10 @@ class SLEntry(BaseModel):
     sl_plus: Optional[float] = None
     shadow_strike_pct: Optional[float] = None
     lg_rank: Optional[str] = None
+    pbwp_plus: Optional[float] = None
+    pitches_caught: Optional[int] = None
+    sl_rank: Optional[int] = None
+    pbwp_rank: Optional[int] = None
 
 
 @app.post("/api/weeks/{week_id}/sl")
