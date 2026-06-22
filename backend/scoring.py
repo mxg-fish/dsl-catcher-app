@@ -36,6 +36,15 @@ def pbwp_rank_bonus(rank):
     if rank <= 25: return 1
     return 0
 
+def pbwp_score_calc(pbwp_plus):
+    if pbwp_plus is None:
+        return None
+    if pbwp_plus >= 45:
+        t = min((pbwp_plus - 45) / (150 - 45), 1.0)
+        return 5 + 5.5 * (t ** 1.5)
+    else:
+        t = max((pbwp_plus - 10) / (45 - 10), 0)
+        return 5 * (t ** 1.5)
 
 def calc_week_scores(week_id: int) -> list[dict]:
     with get_conn() as conn:
@@ -102,7 +111,7 @@ def calc_week_scores(week_id: int) -> list[dict]:
 
                 if sl["pbwp_plus"]:
                     s["pbwp_plus"] = sl["pbwp_plus"]
-                    raw_pbwp_score = (sl["pbwp_plus"] / league_avg_pbwp) * PBWP_MAX
+                    raw_pbwp_score = pbwp_score_calc(sl["pbwp_plus"])
                     s["pbwp_score"] = round(raw_pbwp_score + pbwp_rank_bonus(sl["pbwp_rank"]), 2)
 
             if game_ids:
