@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react'
 import api from '../api'
 
 const CATS = [
-  ['liderazgo','Liderazgo',12,'#4ecdc4'],
   ['recibir','Recibir',30,'#45b7d1'],
-  ['practica','Práctica',24,'#96ceb4'],
   ['blockear','Blockear',17,'#ffeaa7'],
   ['tirar','Tirar',17,'#e63946'],
 ]
@@ -18,6 +16,40 @@ function ScoreBar({ value, max, color }) {
   )
 }
 
+function getWeekTrainingDays(startDate, endDate) {
+  const days = []
+  let d = new Date(startDate + 'T00:00:00')
+  const end = new Date(endDate + 'T00:00:00')
+  while (d <= end) {
+    if (d.getDay() !== 0) {  // skip Sunday
+      days.push(d.toISOString().slice(0,10))
+    }
+    d.setDate(d.getDate() + 1)
+  }
+  return days
+}
+
+function SegmentedBar({ label, value, max, trainingDays, breakdown, field }) {
+  const byDate = {}
+  breakdown.forEach(b => { byDate[b.date] = b[field] })
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'#888', marginBottom:4 }}>
+        <span>{label}</span><span>{value} / {max}</span>
+      </div>
+      <div style={{ display:'flex', gap:3 }}>
+        {trainingDays.map(date => {
+          const got = byDate[date] > 0
+          return (
+            <div key={date} title={date}
+              style={{ flex:1, height:10, borderRadius:3, background: got ? '#00c896' : '#1a1a1a', border: got ? 'none' : '1px solid #333' }} />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function Weekly() {
   const [seasons, setSeasons] = useState([])
   const [weeks,   setWeeks]   = useState([])
@@ -25,6 +57,7 @@ export default function Weekly() {
   const [weekId,   setWeekId]   = useState('')
   const [scores,   setScores]   = useState([])
   const [loading,  setLoading]  = useState(false)
+  const [weekDates, setWeekDates] = useState(null)
 
   useEffect(() => { api.get('/seasons').then(r => { setSeasons(r.data); if (r.data[0]) setSeasonId(String(r.data[0].id)) }) }, [])
   useEffect(() => {
@@ -35,9 +68,12 @@ export default function Weekly() {
     if (!weekId) return
     setLoading(true)
     api.get(`/weeks/${weekId}/leaderboard`).then(r => setScores(r.data)).finally(() => setLoading(false))
-  }, [weekId])
+    const w = weeks.find(w => String(w.id) === weekId)
+    if (w) setWeekDates({ start: w.start_date, end: w.end_date })
+  }, [weekId, weeks])
 
   const medals = ['🥇','🥈','🥉']
+  const trainingDays = weekDates ? getWeekTrainingDays(weekDates.start, weekDates.end) : []
 
   return (
     <div className="page">
@@ -59,13 +95,19 @@ export default function Weekly() {
 
       {scores.map((s, i) => (
         <div key={s.player_id} className="card" style={{ borderLeft: i===0 ? '3px solid #FFD700' : i===1 ? '3px solid #C0C0C0' : i===2 ? '3px solid #CD7F32' : '3px solid #2a2a2a' }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               <span style={{ fontSize:22 }}>{medals[i] || `#${s.rank}`}</span>
               <span style={{ fontWeight:700, fontSize:16 }}>{s.player_name}</span>
             </div>
             <span style={{ fontSize:22, fontWeight:700, color:'#e63946' }}>{s.total}</span>
           </div>
+
+          <SegmentedBar label="Liderazgo" value={s.liderazgo} max={12} trainingDays={trainingDays} breakdown={s.daily_breakdown || []} field="liderazgo" />
+          <SegmentedBar label="Práctica" value={s.practica} max={24} trainingDays={trainingDays} breakdown={s.daily_breakdown || []} field="practica" />
+
+          <div style={{ borderTop:'1px solid #2a2a2a', margin:'12px 0' }} />
+
           {CATS.map(([key, label, max, color]) => (
             <div key={key} style={{ marginBottom:6 }}>
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'#888', marginBottom:2 }}>
@@ -74,6 +116,7 @@ export default function Weekly() {
               <ScoreBar value={s[key]} max={max} color={color} />
             </div>
           ))}
+
           <div style={{ display:'flex', gap:8, marginTop:8, flexWrap:'wrap', fontSize:11, color:'#666' }}>
             <span>Tiros: {s.accurate_throws}/{s.throw_opps} ({s.accurate_throw_pct}%)</span>
             <span>Pop: {s.avg_pop_time ?? '—'}s</span>
