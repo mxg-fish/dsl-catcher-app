@@ -6,6 +6,9 @@ MAX_PRACTICA  = 24
 MAX_BLOCKEAR  = 17
 MAX_TIRAR     = 17
 SL_MAX        = 20
+PBWP_MAX      = 8.5
+BLOCK_EVT_MAX = 8.5
+PITCHES_FULL_CREDIBILITY = 200
 
 
 def movement_points(pct: float) -> float:
@@ -19,6 +22,21 @@ def movement_points(pct: float) -> float:
     return 1
 
 
+def sl_rank_bonus(rank):
+    if rank is None: return 0
+    if rank == 1: return 7
+    if rank <= 10: return 5
+    if rank <= 25: return 3
+    return 0
+
+
+def pbwp_rank_bonus(rank):
+    if rank is None: return 0
+    if rank <= 10: return 2
+    if rank <= 25: return 1
+    return 0
+
+
 def calc_week_scores(week_id: int) -> list[dict]:
     with get_conn() as conn:
         cur = conn.cursor()
@@ -27,7 +45,8 @@ def calc_week_scores(week_id: int) -> list[dict]:
         if not week:
             return []
         week = dict(week)
-        league_avg = week["league_avg_sl_plus"] or 115.0
+        league_avg_sl = week["league_avg_sl_plus"] or 115.0
+        league_avg_pbwp = week.get("league_avg_pbwp") or 100.0
 
         cur.execute("SELECT * FROM players WHERE active=1 ORDER BY name")
         players = cur.fetchall()
@@ -40,8 +59,10 @@ def calc_week_scores(week_id: int) -> list[dict]:
             pid = p["id"]
             s = {"player_id": pid, "player_name": p["name"], "week_id": week_id,
                  "liderazgo": 0.0, "recibir": None, "practica": 0.0,
-                 "blockear": 0.0, "tirar": 0.0,
+                 "blockear": None, "tirar": 0.0,
                  "sl_plus": None, "sl_score": None, "mov_score": None,
+                 "pbwp_plus": None, "pbwp_score": None, "block_evt_score": None,
+                 "pitches_caught": None, "sl_rank": None, "pbwp_rank": None,
                  "block_chances": 0, "blocks": 0, "passed_balls": 0, "wild_pitches": 0,
                  "block_pct": 0.0,
                  "throw_opps": 0, "accurate_throws": 0, "exchange_errors": 0,
@@ -60,13 +81,29 @@ def calc_week_scores(week_id: int) -> list[dict]:
             s["daily_breakdown"] = [{"date": r["entry_date"], "liderazgo": r["liderazgo"], "practica": r["practica"]} for r in daily]
 
             cur.execute(
-                "SELECT sl_plus FROM weekly_sl WHERE week_id=%s AND player_id=%s",
+                "SELECT sl_plus, pbwp_plus, pitches_caught, sl_rank, pbwp_rank FROM weekly_sl WHERE week_id=%s AND player_id=%s",
                 (week_id, pid)
             )
             sl = cur.fetchone()
-            if sl and sl["sl_plus"]:
-                s["sl_plus"]  = sl["sl_plus"]
-                s["sl_score"] = round((sl["sl_plus"] / league_avg) * SL_MAX, 2)
+
+            if sl:
+                s["pitches_caught"] = sl["pitches_caught"]
+                s["sl_rank"] = sl["sl_rank"]
+                s["pbwp_rank"] = sl["pbwp_rank"]
+
+                if sl["sl_plus"]:
+                    s["sl_plus"] = sl["sl_plus"]
+                    raw_sl_score = (sl["sl_plus"] / league_avg_sl) * SL_MAX
+                    pitches = sl["pitches_caught"] or 0
+                    credibility = min(pitches / PITCHES_FULL_CREDIBILITY, 1.0)
+                    baseline = SL_MAX  # league-average equivalent score
+                    shrunk_sl_score = (raw_sl_score * credibility) + (baseline * (1 - credibility))
+                    s["sl_score"] = round(shrunk_sl_score + sl_rank_bonus(sl["sl_rank"]), 2)
+
+                if sl["pbwp_plus"]:
+                    s["pbwp_plus"] = sl["pbwp_plus"]
+                    raw_pbwp_score = (sl["pbwp_plus"] / league_avg_pbwp) * PBWP_MAX
+                    s["pbwp_score"] = round(raw_pbwp_score + pbwp_rank_bonus(sl["pbwp_rank"]), 2)
 
             if game_ids:
                 ph = ",".join(["%s"] * len(game_ids))
@@ -100,7 +137,7 @@ def calc_week_scores(week_id: int) -> list[dict]:
                 if s["block_chances"] > 0:
                     pct = s["blocks"] / s["block_chances"]
                     s["block_pct"]  = round(pct * 100, 1)
-                    s["blockear"]   = round(pct * MAX_BLOCKEAR, 2)
+                    s["block_evt_score"] = round(pct * BLOCK_EVT_MAX, 2)
 
                 cur.execute(f"SELECT quality FROM receiving_events WHERE player_id=%s AND game_id IN ({ph})", args)
                 recv = cur.fetchall()
@@ -119,9 +156,12 @@ def calc_week_scores(week_id: int) -> list[dict]:
             if s["sl_score"] is not None or s["mov_score"] is not None:
                 s["recibir"] = round((s["sl_score"] or 0) + (s["mov_score"] or 0), 2)
 
+            if s["pbwp_score"] is not None or s["block_evt_score"] is not None:
+                s["blockear"] = round((s["pbwp_score"] or 0) + (s["block_evt_score"] or 0), 2)
+
             s["total"] = round(
                 s["liderazgo"] + (s["recibir"] or 0) +
-                s["practica"] + s["blockear"] + s["tirar"], 2
+                s["practica"] + (s["blockear"] or 0) + s["tirar"], 2
             )
             results.append(s)
 
@@ -148,10 +188,12 @@ def calc_season_scores(season_id: int) -> list[dict]:
                     "blockear": 0.0, "tirar": 0.0, "total": 0.0, "weeks_played": 0,
                 }
             t = totals[pid]
-            for k in ["liderazgo", "practica", "blockear", "tirar", "total"]:
+            for k in ["liderazgo", "practica", "tirar", "total"]:
                 t[k] += s[k]
             if s["recibir"] is not None:
                 t["recibir"] += s["recibir"]
+            if s["blockear"] is not None:
+                t["blockear"] += s["blockear"]
             if s["total"] > 0:
                 t["weeks_played"] += 1
 
