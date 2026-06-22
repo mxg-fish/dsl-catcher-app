@@ -2,82 +2,134 @@ import { useState, useEffect } from 'react'
 import api from '../api'
 
 export default function DailyEntry() {
-  const [seasons,  setSeasons]  = useState([])
-  const [weeks,    setWeeks]    = useState([])
   const [players,  setPlayers]  = useState([])
-  const [seasonId, setSeasonId] = useState('')
-  const [weekId,   setWeekId]   = useState('')
-  const [entries,  setEntries]  = useState([])
   const [date,     setDate]     = useState(new Date().toISOString().slice(0,10))
+  const [entries,  setEntries]  = useState({})
   const [toast,    setToast]    = useState('')
+  const [openNote, setOpenNote] = useState(null)
+  const [openVideo, setOpenVideo] = useState(null)
+  const [noteText, setNoteText] = useState('')
+  const [vidTitle, setVidTitle] = useState('')
+  const [vidUrl,   setVidUrl]   = useState('')
+  const [vidType,  setVidType]  = useState('practice')
+  const [todayLog, setTodayLog] = useState({})
 
-  useEffect(() => { api.get('/seasons').then(r => { setSeasons(r.data); if (r.data[0]) setSeasonId(String(r.data[0].id)) }) }, [])
   useEffect(() => { api.get('/players').then(r => setPlayers(r.data)) }, [])
-  useEffect(() => {
-    if (!seasonId) return
-    api.get(`/seasons/${seasonId}/weeks`).then(r => { setWeeks(r.data); if (r.data.at(-1)) setWeekId(String(r.data.at(-1).id)) })
-  }, [seasonId])
-  useEffect(() => {
-    if (weekId) api.get(`/weeks/${weekId}/daily`).then(r => setEntries(r.data))
-  }, [weekId])
+
+  function loadToday() {
+    api.get(`/weeks/0/daily`).catch(() => {})
+    // Pull each player's entry for this date by checking the daily entries directly
+    players.forEach(p => {
+      // lightweight: rely on entries state we manage locally after save
+    })
+  }
 
   function showToast(m) { setToast(m); setTimeout(()=>setToast(''),2000) }
 
-  async function save(playerId, liderazgo, practica) {
-    await api.post('/daily', { player_id: playerId, entry_date: date, liderazgo, practica })
-    api.get(`/weeks/${weekId}/daily`).then(r => setEntries(r.data))
+  async function saveLiderazgo(playerId, val) {
+    const practica = entries[playerId]?.practica ?? 0
+    await api.post('/daily', { player_id: playerId, entry_date: date, liderazgo: val, practica })
+    setEntries(e => ({ ...e, [playerId]: { ...e[playerId], liderazgo: val, practica } }))
     showToast('✅ Guardado')
+  }
+
+  async function savePractica(playerId, val) {
+    const liderazgo = entries[playerId]?.liderazgo ?? 0
+    await api.post('/daily', { player_id: playerId, entry_date: date, liderazgo, practica: val })
+    setEntries(e => ({ ...e, [playerId]: { ...e[playerId], liderazgo, practica: val } }))
+    showToast('✅ Guardado')
+  }
+
+  async function saveNote(playerId) {
+    if (!noteText.trim()) return
+    await api.post('/notes', { player_id: playerId, note_date: date, note_text: noteText.trim() })
+    setNoteText('')
+    setOpenNote(null)
+    showToast('✅ Nota guardada')
+  }
+
+  async function saveVideo(playerId) {
+    if (!vidUrl.trim()) return
+    await api.post('/videos', {
+      player_id: playerId, title: vidTitle || 'Sin título', session_date: date,
+      session_type: vidType, video_url: vidUrl.trim(), notes: ''
+    })
+    setVidTitle(''); setVidUrl(''); setVidType('practice')
+    setOpenVideo(null)
+    showToast('✅ Video guardado')
   }
 
   return (
     <div className="page">
       {toast && <div style={{ position:'fixed', top:48, left:'50%', transform:'translateX(-50%)', background:'#222', padding:'8px 20px', borderRadius:20, fontSize:14, zIndex:200 }}>{toast}</div>}
       <h2>📋 Entradas Diarias</h2>
-      <div className="row" style={{ gap:8, marginBottom:12 }}>
-        <div className="col"><select value={seasonId} onChange={e=>setSeasonId(e.target.value)}>{seasons.map(s=><option key={s.id} value={s.id}>{s.year}</option>)}</select></div>
-        <div className="col"><select value={weekId} onChange={e=>setWeekId(e.target.value)}>{weeks.map(w=><option key={w.id} value={w.id}>Semana {w.week_number}</option>)}</select></div>
-        <div className="col"><input type="date" value={date} onChange={e=>setDate(e.target.value)} /></div>
+
+      <div style={{ marginBottom:16 }}>
+        <label>Fecha</label>
+        <input type="date" value={date} onChange={e=>setDate(e.target.value)} />
       </div>
 
-      {players.map(p => (
-        <div key={p.id} className="card">
-          <div style={{ fontWeight:600, marginBottom:10 }}>{p.name}</div>
-          <div className="row" style={{ gap:12 }}>
-            <div className="col">
-              <label>Liderazgo (máx 2)</label>
-              <div className="row" style={{ marginTop:4 }}>
-                <button className="btn-ghost col" onClick={()=>save(p.id,0,0)}>0</button>
-                <button className="btn-success col" onClick={()=>save(p.id,2,0)}>2 ✓</button>
-              </div>
-            </div>
-            <div className="col">
-              <label>Práctica (máx 4)</label>
-              <div className="row" style={{ marginTop:4 }}>
-                <button className="btn-ghost col" onClick={()=>save(p.id,0,0)}>0</button>
-                <button className="btn-success col" onClick={()=>save(p.id,0,4)}>4 ✓</button>
-              </div>
-            </div>
-            <div className="col">
-              <label>Ambos</label>
-              <button className="btn-primary btn-full" style={{ marginTop:4 }} onClick={()=>save(p.id,2,4)}>2 + 4 ✓</button>
-            </div>
-          </div>
-        </div>
-      ))}
+      {players.map(p => {
+        const lid = entries[p.id]?.liderazgo
+        const prac = entries[p.id]?.practica
+        return (
+          <div key={p.id} className="card">
+            <div style={{ fontWeight:600, marginBottom:10, fontSize:16 }}>{p.name}</div>
 
-      {entries.length > 0 && (
-        <div className="card" style={{ overflowX:'auto' }}>
-          <h3 style={{ marginBottom:8 }}>Entradas de la Semana</h3>
-          <table>
-            <thead><tr><th>Fecha</th><th>Jugador</th><th>Liderazgo</th><th>Práctica</th></tr></thead>
-            <tbody>
-              {entries.map(e=>(
-                <tr key={e.id}><td>{e.entry_date}</td><td>{e.player_name}</td><td>{e.liderazgo}</td><td>{e.practica}</td></tr>
+            <label>Liderazgo (0-2)</label>
+            <div className="row" style={{ marginTop:4, marginBottom:12, gap:4 }}>
+              {[0,1,2].map(v => (
+                <button key={v} className="col"
+                  style={{ background: lid === v ? '#1a3a5c' : '#2a2a2a', color: lid === v ? '#74b9ff' : '#888', fontWeight: lid === v ? 700 : 400 }}
+                  onClick={() => saveLiderazgo(p.id, v)}>{v}</button>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </div>
+
+            <label>Práctica (0-4)</label>
+            <div className="row" style={{ marginTop:4, marginBottom:12, gap:4 }}>
+              {[0,1,2,3,4].map(v => (
+                <button key={v} className="col"
+                  style={{ background: prac === v ? '#1a3a5c' : '#2a2a2a', color: prac === v ? '#74b9ff' : '#888', fontWeight: prac === v ? 700 : 400 }}
+                  onClick={() => savePractica(p.id, v)}>{v}</button>
+              ))}
+            </div>
+
+            <div className="row" style={{ gap:8 }}>
+              <button className="btn-ghost col" onClick={() => { setOpenNote(openNote === p.id ? null : p.id); setOpenVideo(null) }}>
+                📝 {openNote === p.id ? 'Cerrar' : '+ Nota'}
+              </button>
+              <button className="btn-ghost col" onClick={() => { setOpenVideo(openVideo === p.id ? null : p.id); setOpenNote(null) }}>
+                🎥 {openVideo === p.id ? 'Cerrar' : '+ Video'}
+              </button>
+            </div>
+
+            {openNote === p.id && (
+              <div style={{ marginTop:10 }}>
+                <label>Nota</label>
+                <input value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="ej. Trabajó bien el bloqueo hoy" />
+                <button className="btn-success btn-full" style={{ marginTop:8 }} onClick={() => saveNote(p.id)}>Guardar Nota</button>
+              </div>
+            )}
+
+            {openVideo === p.id && (
+              <div style={{ marginTop:10 }}>
+                <label>Título</label>
+                <input value={vidTitle} onChange={e=>setVidTitle(e.target.value)} placeholder="ej. Bullpen del día" />
+                <label style={{ marginTop:8 }}>Tipo</label>
+                <select value={vidType} onChange={e=>setVidType(e.target.value)}>
+                  <option value="practice">Práctica</option>
+                  <option value="game">Juego</option>
+                  <option value="bullpen">Bullpen</option>
+                  <option value="other">Otro</option>
+                </select>
+                <label style={{ marginTop:8 }}>Link de Google Drive</label>
+                <input value={vidUrl} onChange={e=>setVidUrl(e.target.value)} placeholder="https://drive.google.com/..." />
+                <button className="btn-success btn-full" style={{ marginTop:8 }} onClick={() => saveVideo(p.id)}>Guardar Video</button>
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
