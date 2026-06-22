@@ -591,6 +591,33 @@ def game_summary(game_id: int, _=Depends(current_user)):
 
     return {"game": game, "catchers": summaries}
 
+# ── Notes ─────────────────────────────────────────────────────────────────────
+
+class NoteBody(BaseModel):
+    player_id: int
+    note_date: str
+    note_text: str
+
+
+@app.post("/api/notes")
+def add_note(body: NoteBody, _=Depends(current_user)):
+    with db.get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO notes(player_id, note_date, note_text) VALUES(%s,%s,%s) RETURNING id",
+            (body.player_id, body.note_date, body.note_text)
+        )
+        row = cur.fetchone()
+        return {"id": row["id"]}
+
+
+@app.get("/api/players/{player_id}/notes")
+def get_notes(player_id: int, _=Depends(current_user)):
+    with db.get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM notes WHERE player_id=%s ORDER BY note_date DESC, created_at DESC", (player_id,))
+        return [dict(r) for r in cur.fetchall()]
+
 # ── Videos ────────────────────────────────────────────────────────────────────
 
 class VideoBody(BaseModel):
