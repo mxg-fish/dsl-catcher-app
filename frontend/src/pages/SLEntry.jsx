@@ -116,10 +116,10 @@ export default function SLEntry() {
 
             <div style={{ fontSize:11, color:'#888', textTransform:'uppercase', letterSpacing:1, marginBottom:6 }}>Recibir</div>
             <div className="row" style={{ gap:8, flexWrap:'wrap', marginBottom:10 }}>
-              <div className="col"><label>SL+</label><input type="number" value={f.sl_plus} onChange={e=>setField(p.id,'sl_plus',e.target.value)} placeholder="ej. 115" /></div>
               <div className="col"><label>Lanzamientos Atrapados</label><input type="number" value={f.pitches_caught} onChange={e=>setField(p.id,'pitches_caught',e.target.value)} placeholder="ej. 180" /></div>
-              <div className="col"><label>Rango Liga SL+</label><input type="number" value={f.sl_rank} onChange={e=>setField(p.id,'sl_rank',e.target.value)} placeholder="ej. 8" /></div>
+              <div className="col"><label>SL+</label><input type="number" value={f.sl_plus} onChange={e=>setField(p.id,'sl_plus',e.target.value)} placeholder="ej. 115" /></div>
               <div className="col"><label>Shadow Strike %</label><input type="number" value={f.shadow} onChange={e=>setField(p.id,'shadow',e.target.value)} placeholder="ej. 32" /></div>
+              <div className="col"><label>Rango Liga SL+</label><input type="number" value={f.sl_rank} onChange={e=>setField(p.id,'sl_rank',e.target.value)} placeholder="ej. 8" /></div>
             </div>
             <div style={{ fontSize:12, color:'#74b9ff', marginBottom:12 }}>SL+ Score (sin ajuste de volumen): {slScore} / 20</div>
 
