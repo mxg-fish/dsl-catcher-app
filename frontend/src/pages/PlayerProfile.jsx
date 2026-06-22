@@ -8,6 +8,7 @@ export default function PlayerProfile() {
   const [seasonId, setSeasonId] = useState('')
   const [history,  setHistory]  = useState([])
   const [videos,   setVideos]   = useState([])
+  const [notes,    setNotes]    = useState([])
 
   // Video form
   const [vidTitle,  setVidTitle]  = useState('')
@@ -25,6 +26,7 @@ export default function PlayerProfile() {
     if (!playerId || !seasonId) return
     api.get(`/players/${playerId}/history/${seasonId}`).then(r => setHistory(r.data))
     api.get(`/players/${playerId}/videos`).then(r => setVideos(r.data))
+    api.get(`/players/${playerId}/notes`).then(r => setNotes(r.data))
   }
   useEffect(load, [playerId, seasonId])
 
@@ -78,6 +80,18 @@ export default function PlayerProfile() {
           </table>
         </div>
       )}
+
+      {/* Notes feed */}
+      <div className="card" style={{ marginBottom:20 }}>
+        <h3 style={{ marginBottom:10 }}>📝 Notas</h3>
+        {notes.length === 0 && <p style={{ color:'#666', fontSize:13 }}>Sin notas aún.</p>}
+        {notes.map(n => (
+          <div key={n.id} style={{ borderBottom:'1px solid #222', padding:'8px 0' }}>
+            <div style={{ fontSize:11, color:'#888' }}>{n.note_date}</div>
+            <div style={{ fontSize:13, color:'#ddd', marginTop:2 }}>{n.note_text}</div>
+          </div>
+        ))}
+      </div>
 
       {/* Add video */}
       <div className="card">
